@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,10 +14,10 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 262 83% 58%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 291 84% 58%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
@@ -52,19 +53,19 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 226 16% 14%;
+    --foreground: 259 96% 94%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 226 18% 20%;
+    --card-foreground: 259 96% 94%;
 
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 291 84% 58%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
@@ -96,6 +97,36 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-casino-background text-casino-text;
+  }
+}
+
+@layer components {
+  .game-card {
+    @apply bg-casino-card rounded-xl p-4 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden border border-transparent hover:border-casino-primary cursor-pointer;
+  }
+  
+  .game-card-title {
+    @apply text-xl font-bold text-white mb-2;
+  }
+  
+  .neon-button {
+    @apply bg-casino-primary hover:bg-opacity-90 text-white py-2 px-6 rounded-lg transition-all duration-300 hover:shadow-[0_0_15px_rgba(139,92,246,0.8)] font-medium;
+  }
+  
+  .coin-display {
+    @apply flex items-center gap-2 bg-casino-card px-4 py-2 rounded-full text-white font-medium;
+  }
+  
+  .game-layout {
+    @apply container mx-auto py-8 px-4 max-w-6xl;
+  }
+  
+  .game-title {
+    @apply text-3xl font-bold mb-6 text-white;
+  }
+  
+  .control-panel {
+    @apply bg-casino-card rounded-xl p-6 mb-6;
   }
 }
