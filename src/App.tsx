@@ -8,6 +8,7 @@ import { CoinProvider } from "@/contexts/CoinContext";
 import Index from "./pages/Index";
 import DragonTower from "./pages/DragonTower";
 import Mines from "./pages/Mines";
+import Dice from "./pages/Dice";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dragon-tower" element={<DragonTower />} />
             <Route path="/mines" element={<Mines />} />
+            <Route path="/dice" element={<Dice />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
