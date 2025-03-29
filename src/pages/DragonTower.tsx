@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
@@ -277,21 +276,21 @@ const DragonTower = () => {
                   value={betAmount}
                   onChange={(e) => setBetAmount(Number(e.target.value))}
                   className="bg-casino-background border-casino-muted text-white"
-                  disabled={gameActive && !isGameOver && !isLoading}
+                  disabled={gameActive && !isGameOver}
                 />
                 <Button 
                   variant="outline" 
                   onClick={() => setBetAmount(Math.floor(betAmount / 2))}
-                  className="text-white border-casino-muted"
-                  disabled={(betAmount <= 10) || (gameActive && !isGameOver && !isLoading)}
+                  className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
+                  disabled={betAmount <= 10 || (gameActive && !isGameOver)}
                 >
                   ½
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => setBetAmount(Math.min(betAmount * 2, coins))}
-                  className="text-white border-casino-muted"
-                  disabled={(betAmount * 2 > coins) || (gameActive && !isGameOver && !isLoading)}
+                  className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
+                  disabled={betAmount * 2 > coins || (gameActive && !isGameOver)}
                 >
                   2×
                 </Button>
@@ -402,7 +401,7 @@ const DragonTower = () => {
           </div>
           
           <div className="flex-1 bg-casino-card rounded-xl p-6 relative">
-            <div className="flex flex-col-reverse gap-1 max-w-3xl mx-auto" style={{ height: "160px" }}>
+            <div className="flex flex-col-reverse gap-2 max-w-xl mx-auto h-[320px] items-center justify-center">
               {Array(MAX_ROWS).fill(0).map((_, rowIndex) => {
                 const isCurrentLevel = rowIndex === currentLevel && !isGameOver;
                 const isFutureLevel = rowIndex > currentLevel;
@@ -412,8 +411,12 @@ const DragonTower = () => {
                 return (
                   <div 
                     key={rowIndex} 
-                    className={`grid gap-1 relative ${isCurrentLevel ? 'z-10' : ''}`}
-                    style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}
+                    className={`grid gap-2 relative ${isCurrentLevel ? 'z-10' : ''}`}
+                    style={{ 
+                      gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))`,
+                      width: '100%',
+                      maxWidth: `${columnsCount * 80}px`
+                    }}
                   >
                     {Array(columnsCount).fill(0).map((_, colIndex) => {
                       const isRevealed = revealedTiles[rowIndex]?.[colIndex];
@@ -425,7 +428,7 @@ const DragonTower = () => {
                           key={colIndex}
                           onClick={() => handleTileClick(rowIndex, colIndex)}
                           className={`
-                            aspect-square flex items-center justify-center rounded-md transition-all duration-300
+                            flex items-center justify-center rounded-md transition-all duration-300
                             ${isClickable 
                               ? `cursor-pointer border-2 border-${DIFFICULTY_PRESETS[difficulty].color}/50 ${DIFFICULTY_PRESETS[difficulty].color}/30 hover:${DIFFICULTY_PRESETS[difficulty].color}/50` 
                               : isFutureLevel ? 'bg-casino-background/50 cursor-not-allowed opacity-50' : 'bg-casino-background'}
@@ -435,28 +438,27 @@ const DragonTower = () => {
                             ${isLoading && isCurrentLevel ? 'animate-pulse' : ''}
                             ${isCurrentLevel ? 'shadow-lg shadow-primary/20' : ''}
                           `}
-                          style={{ height: '14px', minHeight: '14px' }}
+                          style={{ 
+                            height: '24px',
+                            minHeight: '24px',
+                            width: '64px',
+                            minWidth: '64px'
+                          }}
                         >
-                          {isLoading && rowIndex === currentLevel && !isRevealed ? (
-                            <div className="w-1 h-1 rounded-full bg-casino-muted/30 animate-pulse"></div>
+                          {!isRevealed && isClickable ? (
+                            <div className="w-1.5 h-1.5 rounded-full bg-casino-muted/30 animate-pulse"></div>
                           ) : isRevealed ? (
                             isDragon ? (
-                              <Skull className="text-red-500" size={8} />
+                              <Skull className="text-red-500" size={12} />
                             ) : (
-                              <Check className="text-green-400" size={8} />
+                              <Check className="text-green-400" size={12} />
                             )
                           ) : rowIndex === MAX_ROWS - 1 && isCurrentLevel ? (
-                            <Trophy className="text-yellow-400 opacity-50" size={8} />
+                            <Trophy className="text-yellow-400 opacity-50" size={12} />
                           ) : null}
                         </div>
                       );
                     })}
-                    
-                    <div className="absolute -right-12 top-1/2 transform -translate-y-1/2 hidden md:flex items-center">
-                      <span className={`px-1 py-0.5 rounded text-xs ${isCurrentLevel ? DIFFICULTY_PRESETS[difficulty].color : 'bg-casino-muted/30'}`}>
-                        {multipliers[rowIndex]}x
-                      </span>
-                    </div>
                   </div>
                 );
               })}

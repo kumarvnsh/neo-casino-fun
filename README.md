@@ -1,69 +1,97 @@
-# Welcome to your Lovable project
+# NeoVegas - Virtual Casino Experience
 
-## Project info
+A modern, interactive casino website built with React and TypeScript, offering a variety of classic casino games with virtual coins.
 
-**URL**: https://lovable.dev/projects/e9fdef91-7f63-4831-8949-2b4c919bbe33
+## 🎮 Available Games
 
-## How can I edit this code?
+- **Dragon Tower**: Climb the tower for higher multipliers while avoiding dragons
+- **Mines**: Uncover gems and avoid mines to win big rewards
+- **Dice**: Predict if the dice will roll over or under your number
+- **Wheel**: Spin the wheel and win multipliers based on where it lands
+- **Roulette** (Coming Soon): Classic casino roulette with multiple betting options
 
-There are several ways of editing your application.
+## 🚀 Features
 
-**Use Lovable**
+- Modern, responsive design with a dark theme
+- Virtual coin system (10,000 coins to start)
+- Local storage for persistent coin balance
+- Interactive game animations
+- Mobile-friendly interface
+- No real money involved - pure entertainment
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e9fdef91-7f63-4831-8949-2b4c919bbe33) and start prompting.
+## 🛠️ Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- React 18
+- TypeScript
+- Tailwind CSS
+- Vite
+- Radix UI Components
+- React Router
+- React Query
 
-**Use your preferred IDE**
+## 🎯 Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clone the repository:
+```bash
+git clone https://github.com/gamedevteam321/neo-vegas.git
+cd neo-vegas
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install dependencies:
+```bash
+npm install
+```
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+4. Open [http://localhost:5173](http://localhost:5173) in your browser
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🎲 How to Play
 
-**Use GitHub Codespaces**
+1. Start with 10,000 virtual coins (stored locally in your browser)
+2. Choose any game from the selection
+3. Place bets and play to win more coins
+4. Your coin balance is saved automatically between sessions
+5. You can reset your coins to 10,000 anytime using the reset button
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🎨 Design
 
-## What technologies are used for this project?
+The website features a modern, dark theme with:
+- Neon accents
+- Smooth animations
+- Responsive layout
+- Intuitive game controls
+- Clear visual feedback
 
-This project is built with .
+## 📱 Mobile Support
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The website is fully responsive and works on:
+- Desktop browsers
+- Mobile browsers
+- Tablets
+- Different screen sizes
 
-## How can I deploy this project?
+## 🔒 Security
 
-Simply open [Lovable](https://lovable.dev/projects/e9fdef91-7f63-4831-8949-2b4c919bbe33) and click on Share -> Publish.
+- No real money involved
+- All games are client-side
+- No server-side gambling
+- Local storage for coin balance
+- No personal data collection
 
-## I want to use a custom domain - is that possible?
+## 🤝 Contributing
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- Built with React and modern web technologies
+- Inspired by classic casino games
+- Designed for entertainment purposes only

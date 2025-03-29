@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
@@ -11,7 +10,8 @@ import {
   HelpCircle, 
   RefreshCcw, 
   Coins,
-  AlertTriangle
+  AlertTriangle,
+  Play
 } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { formatCoins } from '@/utils/coinManager';
@@ -35,6 +35,7 @@ const Mines = () => {
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [autoRevealed, setAutoRevealed] = useState(0);
   const [autoTarget, setAutoTarget] = useState(5);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Calculate the next tile multiplier based on current state
   useEffect(() => {
@@ -66,12 +67,15 @@ const Mines = () => {
   
   // Start a new game
   const startGame = () => {
+    setIsLoading(true);
+    
     if (betAmount <= 0) {
       toast({
         title: "Invalid bet amount",
         description: "Please enter a bet amount greater than 0",
         variant: "destructive",
       });
+      setIsLoading(false);
       return;
     }
     
@@ -81,6 +85,7 @@ const Mines = () => {
         description: "You don't have enough coins for this bet",
         variant: "destructive",
       });
+      setIsLoading(false);
       return;
     }
     
@@ -112,11 +117,15 @@ const Mines = () => {
     // Calculate first multiplier
     const odds = (GRID_SIZE - mineCount) / GRID_SIZE;
     setNextMultiplier(Number((1 / odds).toFixed(2)));
+    
+    setIsLoading(false);
   };
   
   // Handle tile click
   const handleTileClick = (index: number) => {
-    if (!gameActive || isGameOver || revealed[index]) return;
+    if (!gameActive || isGameOver || revealed[index] || isLoading) return;
+    
+    setIsLoading(true);
     
     // Create a copy of the revealed state
     const newRevealed = [...revealed];
@@ -140,6 +149,7 @@ const Mines = () => {
           description: "You hit a mine! Better luck next time.",
           variant: "destructive",
         });
+        setIsLoading(false);
       }, 300);
     } else {
       // Safe tile - update multiplier
@@ -155,12 +165,14 @@ const Mines = () => {
           cashOut();
         }
       }
+      
+      setIsLoading(false);
     }
   };
   
   // Start auto mode
   const startAutoMode = () => {
-    if (!gameActive || isGameOver) return;
+    if (!gameActive || isGameOver || isLoading) return;
     setIsAutoMode(true);
     toast({
       title: "Auto Mode Activated",
@@ -170,7 +182,9 @@ const Mines = () => {
   
   // Cash out current winnings
   const cashOut = () => {
-    if (!gameActive || isGameOver) return;
+    if (!gameActive || isGameOver || isLoading) return;
+    
+    setIsLoading(true);
     
     const winAmount = Math.floor(betAmount * currentMultiplier);
     updateCoins(winAmount);
@@ -189,6 +203,8 @@ const Mines = () => {
       title: "Cashed Out!",
       description: `You cashed out and won ${formatCoins(winAmount)} coins!`,
     });
+    
+    setIsLoading(false);
   };
   
   const resetGame = () => {
@@ -196,6 +212,7 @@ const Mines = () => {
     setIsGameOver(false);
     setWin(false);
     setIsAutoMode(false);
+    setIsLoading(false);
   };
   
   // Calculate current potential win
@@ -212,153 +229,181 @@ const Mines = () => {
   return (
     <MainLayout>
       <div className="game-layout">
-        <h1 className="game-title">Mines</h1>
+        <h1 className="game-title flex items-center gap-2">
+          <Bomb className="h-8 w-8 text-red-500" />
+          Mines
+        </h1>
         
-        {!gameActive ? (
-          <div className="control-panel">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2 text-white">Game Setup</h2>
-              <p className="text-gray-400 mb-4">Choose your bet amount and number of mines</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Bet Amount: {formatCoins(betAmount)} coins
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={10}
-                      max={coins}
-                      value={betAmount}
-                      onChange={(e) => setBetAmount(Number(e.target.value))}
-                      className="bg-casino-background border-casino-muted text-white"
-                    />
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setBetAmount(Math.floor(betAmount / 2))}
-                      className="text-white border-casino-muted"
-                      disabled={betAmount <= 10}
-                    >
-                      ½
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setBetAmount(Math.min(betAmount * 2, coins))}
-                      className="text-white border-casino-muted"
-                      disabled={betAmount * 2 > coins}
-                    >
-                      2×
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setBetAmount(Math.min(coins, 1000))}
-                      className="text-white border-casino-muted"
-                    >
-                      Max
-                    </Button>
-                  </div>
+        <div className="mb-6 flex flex-col md:flex-row gap-4 items-start">
+          {/* Control Panel */}
+          <div className="bg-casino-card rounded-xl p-6 w-full md:w-64 flex flex-col gap-4">
+            <div>
+              <p className="text-gray-400 text-sm mb-2">Bet Amount</p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={10}
+                  max={coins}
+                  value={betAmount}
+                  onChange={(e) => setBetAmount(Number(e.target.value))}
+                  className="bg-casino-background border-casino-muted text-white"
+                  disabled={gameActive && !isGameOver}
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => setBetAmount(Math.floor(betAmount / 2))}
+                  className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
+                  disabled={betAmount <= 10 || (gameActive && !isGameOver)}
+                >
+                  ½
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setBetAmount(Math.min(betAmount * 2, coins))}
+                  className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
+                  disabled={betAmount * 2 > coins || (gameActive && !isGameOver)}
+                >
+                  2×
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <p className="text-gray-400 text-sm mb-2">Number of Mines</p>
+              <Slider
+                value={[mineCount]}
+                min={MIN_MINES}
+                max={MAX_MINES}
+                step={1}
+                onValueChange={(value) => setMineCount(value[0])}
+                className="py-4"
+                disabled={gameActive && !isGameOver && !isLoading}
+              />
+              <div className="text-sm text-gray-400 mt-1">
+                {mineCount} mines = higher risk, higher potential reward
+              </div>
+            </div>
+            
+            <div>
+              <p className="text-gray-400 text-sm">Current Stats</p>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="bg-casino-background p-2 rounded-lg">
+                  <p className="text-xs text-gray-400">Multiplier</p>
+                  <p className="text-lg font-bold">{currentMultiplier}x</p>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Number of Mines: {mineCount} mines
-                  </label>
-                  <Slider
-                    value={[mineCount]}
-                    min={MIN_MINES}
-                    max={MAX_MINES}
-                    step={1}
-                    onValueChange={(value) => setMineCount(value[0])}
-                    className="py-4"
-                  />
-                  <div className="text-sm text-gray-400 mt-1">
-                    More mines = higher risk, higher potential reward
-                  </div>
+                <div className="bg-casino-background p-2 rounded-lg">
+                  <p className="text-xs text-gray-400">Win</p>
+                  <p className="text-lg font-bold text-green-500">{formatCoins(currentWin)}</p>
+                </div>
+                <div className="bg-casino-background p-2 rounded-lg">
+                  <p className="text-xs text-gray-400">Next Multiplier</p>
+                  <p className="text-lg font-bold text-blue-400">{nextMultiplier}x</p>
+                </div>
+                <div className="bg-casino-background p-2 rounded-lg">
+                  <p className="text-xs text-gray-400">Safe Chance</p>
+                  <p className="text-lg font-bold text-yellow-400">{safeProb}%</p>
                 </div>
               </div>
             </div>
             
-            <Button 
-              className="neon-button w-full md:w-auto" 
-              onClick={startGame}
-              disabled={betAmount <= 0 || betAmount > coins}
-            >
-              Start Game
-            </Button>
-          </div>
-        ) : (
-          <div className="mb-6 flex flex-col md:flex-row gap-4 items-start">
-            <div className="bg-casino-card rounded-xl p-6 w-full md:w-80 flex flex-col gap-4">
-              <div>
-                <p className="text-gray-400 text-sm">Bet Amount</p>
-                <p className="text-xl font-bold text-white">{formatCoins(betAmount)} coins</p>
-              </div>
-              
-              <div>
-                <p className="text-gray-400 text-sm">Mines</p>
-                <p className="text-xl font-bold text-white">{mineCount} / 25</p>
-              </div>
-              
-              <div>
-                <p className="text-gray-400 text-sm">Current Multiplier</p>
-                <p className="text-xl font-bold text-white">{currentMultiplier}x</p>
-              </div>
-              
-              <div>
-                <p className="text-gray-400 text-sm">Current Win</p>
-                <p className="text-xl font-bold text-green-500">{formatCoins(currentWin)} coins</p>
-              </div>
-              
-              {!isGameOver && (
-                <div>
-                  <p className="text-gray-400 text-sm">Next Tile Multiplier</p>
-                  <p className="text-lg font-bold text-blue-400">{nextMultiplier}x ({formatCoins(nextWin)} coins)</p>
-                </div>
-              )}
-              
-              <div>
-                <p className="text-gray-400 text-sm">Gems Found</p>
-                <p className="text-lg font-bold text-purple-400">{openedSafeTiles} / {totalSafeTiles}</p>
-              </div>
-              
-              <div>
-                <p className="text-gray-400 text-sm">Safe Probability</p>
-                <p className="text-lg font-bold text-yellow-400">{safeProb}%</p>
-              </div>
-              
-              {!isGameOver && !isAutoMode && (
-                <div className="space-y-2">
-                  <Button 
-                    className="w-full bg-green-600 hover:bg-green-700" 
-                    onClick={cashOut}
-                  >
-                    <Coins className="mr-2" size={16} />
-                    Cash Out ({currentMultiplier}x)
-                  </Button>
-                  
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={totalSafeTiles - openedSafeTiles}
-                      value={autoTarget}
-                      onChange={(e) => setAutoTarget(Number(e.target.value))}
-                      className="bg-casino-background border-casino-muted text-white"
-                      placeholder="# of clicks"
-                    />
+            {!gameActive ? (
+              <Button 
+                className="neon-button w-full" 
+                onClick={startGame}
+                disabled={betAmount <= 0 || betAmount > coins || isLoading}
+              >
+                <Play className="mr-2" size={16} />
+                Start Game
+              </Button>
+            ) : (
+              <>
+                {!isGameOver && (
+                  <>
                     <Button 
-                      className="bg-blue-600 hover:bg-blue-700" 
-                      onClick={startAutoMode}
+                      className="w-full bg-green-600 hover:bg-green-700" 
+                      onClick={cashOut}
+                      disabled={isLoading}
                     >
-                      Auto
+                      <Coins className="mr-2" size={16} />
+                      Cash Out ({currentMultiplier}x)
                     </Button>
-                  </div>
-                </div>
-              )}
+                    
+                    {!isAutoMode && (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={totalSafeTiles - openedSafeTiles}
+                            value={autoTarget}
+                            onChange={(e) => setAutoTarget(Number(e.target.value))}
+                            className="bg-casino-background border-casino-muted text-white"
+                            placeholder="# of clicks"
+                          />
+                          <Button 
+                            className="bg-blue-600 hover:bg-blue-700" 
+                            onClick={startAutoMode}
+                            disabled={isLoading}
+                          >
+                            Auto
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                {isGameOver && (
+                  <Button 
+                    className="w-full" 
+                    onClick={resetGame}
+                    disabled={isLoading}
+                  >
+                    <RefreshCcw className="mr-2" size={16} />
+                    Play Again
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+          
+          {/* Game Grid */}
+          <div className="flex-1">
+            <div className="bg-casino-card rounded-xl p-6">
+              <div className="grid grid-cols-5 gap-2">
+                {Array(GRID_SIZE).fill(0).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleTileClick(index)}
+                    disabled={!gameActive || isGameOver || revealed[index] || isLoading}
+                    className={`
+                      aspect-square rounded-lg flex items-center justify-center
+                      transition-all duration-200
+                      ${revealed[index]
+                        ? grid[index] === 1
+                          ? 'bg-red-500/20 border-red-500'
+                          : 'bg-green-500/20 border-green-500'
+                        : 'bg-casino-background hover:bg-casino-background/70 border-casino-muted'
+                      }
+                      ${!gameActive || isGameOver || revealed[index] || isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
+                      border-2
+                    `}
+                  >
+                    {revealed[index] ? (
+                      grid[index] === 1 ? (
+                        <Bomb className="text-red-500" size={24} />
+                      ) : (
+                        <Gem className="text-green-500" size={24} />
+                      )
+                    ) : (
+                      <HelpCircle className="text-gray-500" size={24} />
+                    )}
+                  </button>
+                ))}
+              </div>
               
               {isAutoMode && !isGameOver && (
-                <div>
+                <div className="mt-4">
                   <div className="mb-2 text-sm text-white">
                     Auto Mode: {autoRevealed} / {autoTarget} gems revealed
                   </div>
@@ -371,90 +416,13 @@ const Mines = () => {
                   <Button 
                     className="w-full mt-2 bg-red-600 hover:bg-red-700" 
                     onClick={() => setIsAutoMode(false)}
+                    disabled={isLoading}
                   >
                     Cancel Auto Mode
                   </Button>
                 </div>
               )}
-              
-              {isGameOver && (
-                <Button 
-                  className="w-full mt-2" 
-                  onClick={resetGame}
-                >
-                  <RefreshCcw className="mr-2" size={16} />
-                  Play Again
-                </Button>
-              )}
             </div>
-            
-            <div className="flex-1 bg-casino-card rounded-xl p-6">
-              <div className="grid grid-cols-5 gap-3">
-                {Array(GRID_SIZE).fill(0).map((_, index) => {
-                  const isRevealed = revealed[index];
-                  const isMine = grid[index] === 1;
-                  
-                  return (
-                    <div
-                      key={index}
-                      onClick={() => handleTileClick(index)}
-                      className={`
-                        aspect-square flex items-center justify-center rounded-lg cursor-pointer transition-all duration-300
-                        ${isRevealed 
-                          ? (isMine 
-                            ? 'bg-red-900/50'
-                            : 'bg-purple-700/50')
-                          : 'bg-casino-background hover:bg-casino-primary/30'}
-                        ${!isGameOver && !isRevealed ? 'animate-pulse-glow' : ''}
-                      `}
-                    >
-                      {isRevealed ? (
-                        isMine ? (
-                          <Bomb className="text-red-500" size={24} />
-                        ) : (
-                          <Gem className="text-purple-400" size={24} />
-                        )
-                      ) : (
-                        <HelpCircle className="text-gray-600" size={20} />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {isGameOver && (
-                <div className={`mt-4 p-4 rounded-lg ${win ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
-                  <div className="flex items-center gap-2">
-                    {win ? (
-                      <Coins className="text-yellow-400" size={20} />
-                    ) : (
-                      <AlertTriangle className="text-red-400" size={20} />
-                    )}
-                    <h3 className="font-semibold text-white">
-                      {win ? 'You Win!' : 'Game Over!'}
-                    </h3>
-                  </div>
-                  <p className="text-gray-300 mt-1">
-                    {win 
-                      ? `You cashed out with a ${currentMultiplier}x multiplier and won ${formatCoins(currentWin)} coins!` 
-                      : 'You hit a mine! Better luck next time.'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        
-        <div className="bg-casino-card rounded-xl p-6 mt-8">
-          <h2 className="text-xl font-semibold mb-2 text-white">How to Play</h2>
-          <div className="space-y-2 text-gray-300">
-            <p>1. Choose your bet amount and number of mines (1-24)</p>
-            <p>2. The grid has 25 tiles total, with gems and mines</p>
-            <p>3. Click on a tile to reveal it - if it's a gem, your multiplier increases</p>
-            <p>4. If you hit a mine, you lose your bet</p>
-            <p>5. You can cash out at any time to secure your winnings</p>
-            <p>6. More mines = higher risk but higher potential rewards</p>
-            <p>7. Use Auto mode to automatically stop after revealing a set number of gems</p>
           </div>
         </div>
       </div>

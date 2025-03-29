@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
@@ -153,7 +152,7 @@ const DiceGame = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => setBetAmount(Math.floor(betAmount / 2))}
-                  className="text-white border-casino-muted"
+                  className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
                   disabled={(betAmount <= 10) || (gameActive && isRolling)}
                 >
                   ½
@@ -161,7 +160,7 @@ const DiceGame = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => setBetAmount(Math.min(betAmount * 2, coins))}
-                  className="text-white border-casino-muted"
+                  className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
                   disabled={(betAmount * 2 > coins) || (gameActive && isRolling)}
                 >
                   2×
@@ -176,9 +175,9 @@ const DiceGame = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => setDifficulty('easy')}
-                  className={`text-white border-casino-muted ${
+                  className={`text-white border-casino-muted bg-casino-background hover:bg-green-800/50 ${
                     (isRollOver && targetNumber === 25) || (!isRollOver && targetNumber === 75) 
-                      ? 'bg-green-800/50' 
+                      ? 'bg-green-800/50 border-green-500' 
                       : ''
                   }`}
                   disabled={gameActive && isRolling}
@@ -189,8 +188,8 @@ const DiceGame = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => setDifficulty('medium')}
-                  className={`text-white border-casino-muted ${
-                    targetNumber === 50 ? 'bg-yellow-800/50' : ''
+                  className={`text-white border-casino-muted bg-casino-background hover:bg-yellow-800/50 ${
+                    targetNumber === 50 ? 'bg-yellow-800/50 border-yellow-500' : ''
                   }`}
                   disabled={gameActive && isRolling}
                 >
@@ -200,9 +199,9 @@ const DiceGame = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => setDifficulty('hard')}
-                  className={`text-white border-casino-muted ${
+                  className={`text-white border-casino-muted bg-casino-background hover:bg-red-800/50 ${
                     (isRollOver && targetNumber === 70) || (!isRollOver && targetNumber === 30)
-                      ? 'bg-red-800/50' 
+                      ? 'bg-red-800/50 border-red-500' 
                       : ''
                   }`}
                   disabled={gameActive && isRolling}

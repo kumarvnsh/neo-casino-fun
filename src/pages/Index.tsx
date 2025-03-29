@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -89,7 +88,6 @@ const Index = () => {
             icon={<Disc className="text-casino-primary" size={48} />}
             description="Spin the wheel and win multipliers based on where it lands."
             to="/wheel"
-            comingSoon
           />
           
           <GameCard 
