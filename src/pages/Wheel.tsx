@@ -8,6 +8,7 @@ import {
   Play,
   RefreshCcw,
   Coins,
+  HelpCircle,
 } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import {
@@ -85,6 +86,7 @@ const Wheel = () => {
   const [rotation, setRotation] = useState(0);
   const [segments, setSegments] = useState(createWheelSegments(30, "medium"));
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [gameActive, setGameActive] = useState(true);
 
   // Update segments when difficulty or number of segments changes
   useEffect(() => {
@@ -387,17 +389,41 @@ const Wheel = () => {
           </div>
         </div>
         
-        <div className="bg-casino-card rounded-xl p-6 mt-8">
-          <h2 className="text-xl font-semibold mb-2 text-white">How to Play</h2>
-          <div className="space-y-2 text-gray-300">
-            <p>1. Choose your risk level and number of wheel segments</p>
-            <p>2. Set your bet amount</p>
-            <p>3. Click "Spin Wheel" to start the game</p>
-            <p>4. The wheel will spin and land on a random multiplier</p>
-            <p>5. Your bet will be multiplied by the number you land on</p>
-            <p>6. Higher risk levels have more zero multipliers but better rewards</p>
-            <p>7. More segments mean more variety in possible outcomes</p>
+        <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="bg-casino-background p-2 rounded-lg">
+            <p className="text-xs text-gray-400">Multiplier</p>
+            <p className="text-lg font-bold text-blue-400">{segments[result as number]?.multiplier}x</p>
           </div>
+          <div className="bg-casino-background p-2 rounded-lg">
+            <p className="text-xs text-gray-400">Potential Win</p>
+            <p className="text-lg font-bold text-green-400">{segments[result as number]?.multiplier ? Math.floor(betAmount * segments[result as number]?.multiplier) : 'N/A'}</p>
+          </div>
+        </div>
+
+        {/* How to Play */}
+        <div className="p-4 bg-casino-background/50 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <HelpCircle className="w-4 h-4 text-blue-400" />
+            <h3 className="text-sm font-medium text-white">How to Play</h3>
+          </div>
+          <ul className="text-sm text-gray-300 space-y-2">
+            <li className="flex items-start gap-2">
+              <span className="text-green-400">1.</span>
+              Set your bet amount and choose a segment (1-12).
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-400">2.</span>
+              Click Spin to start the wheel animation.
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-400">3.</span>
+              The wheel will stop on a random segment.
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-400">4.</span>
+              If the wheel stops on your chosen segment, you win!
+            </li>
+          </ul>
         </div>
       </div>
     </MainLayout>

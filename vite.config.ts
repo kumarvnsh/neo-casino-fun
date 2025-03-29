@@ -7,7 +7,7 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   base: mode === 'production' ? '/neo-casino-fun/' : '/',  // Base URL for GitHub Pages deployment
   server: {
-    host: "::",
+    host: true,  // This enables listening on all network interfaces
     port: 8080,
   },
   plugins: [

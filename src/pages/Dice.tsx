@@ -14,7 +14,8 @@ import {
   Coins,
   Calculator,
   Trophy,
-  X
+  X,
+  HelpCircle
 } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
@@ -134,170 +135,135 @@ const DiceGame = () => {
       <div className="game-layout">
         <h1 className="game-title">Dice</h1>
         
-        <div className="mb-6 flex flex-col md:flex-row gap-4 items-start">
-          {/* Control Panel */}
-          <div className="bg-casino-card rounded-xl p-6 w-full md:w-64 flex flex-col gap-4">
-            <div>
-              <p className="text-gray-400 text-sm mb-2">Bet Amount</p>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={10}
-                  max={coins}
-                  value={betAmount}
-                  onChange={(e) => setBetAmount(Number(e.target.value))}
-                  className="bg-casino-background border-casino-muted text-white"
-                  disabled={gameActive && isRolling}
-                />
-                <Button 
-                  variant="outline" 
-                  onClick={() => setBetAmount(Math.floor(betAmount / 2))}
-                  className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
-                  disabled={(betAmount <= 10) || (gameActive && isRolling)}
-                >
-                  ½
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setBetAmount(Math.min(betAmount * 2, coins))}
-                  className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
-                  disabled={(betAmount * 2 > coins) || (gameActive && isRolling)}
-                >
-                  2×
-                </Button>
+        <div className="game-interface">
+          <div className="game-controls bg-casino-card rounded-xl p-4 md:p-6">
+            <div className="space-y-4">
+              <div>
+                <p className="text-gray-400 text-sm mb-2">Bet Amount</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    value={betAmount}
+                    onChange={(e) => setBetAmount(parseInt(e.target.value) || 0)}
+                    className="bg-casino-background border-casino-muted text-white"
+                    disabled={gameActive && isRolling}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
+                    onClick={() => setBetAmount(Math.max(0, Math.floor(betAmount / 2)))}
+                    disabled={betAmount <= 10 || (gameActive && isRolling)}
+                  >
+                    ½
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="text-white border-casino-muted bg-casino-background hover:bg-casino-accent/20"
+                    onClick={() => setBetAmount(Math.min(coins, betAmount * 2))}
+                    disabled={betAmount * 2 > coins || (gameActive && isRolling)}
+                  >
+                    2×
+                  </Button>
+                </div>
               </div>
+
+              <div>
+                <p className="text-gray-400 text-sm">Difficulty</p>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setDifficulty('easy')}
+                    className={`text-white border-casino-muted bg-casino-background hover:bg-green-800/50 ${
+                      (isRollOver && targetNumber === 25) || (!isRollOver && targetNumber === 75) 
+                        ? 'bg-green-800/50 border-green-500' 
+                        : ''
+                    }`}
+                    disabled={gameActive && isRolling}
+                  >
+                    Easy
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setDifficulty('medium')}
+                    className={`text-white border-casino-muted bg-casino-background hover:bg-yellow-800/50 ${
+                      targetNumber === 50 ? 'bg-yellow-800/50 border-yellow-500' : ''
+                    }`}
+                    disabled={gameActive && isRolling}
+                  >
+                    Medium
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setDifficulty('hard')}
+                    className={`text-white border-casino-muted bg-casino-background hover:bg-red-800/50 ${
+                      (isRollOver && targetNumber === 70) || (!isRollOver && targetNumber === 30) 
+                        ? 'bg-red-800/50 border-red-500' 
+                        : ''
+                    }`}
+                    disabled={gameActive && isRolling}
+                  >
+                    Hard
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={isRollOver}
+                    onCheckedChange={toggleRollMode}
+                    disabled={gameActive && isRolling}
+                  />
+                  <Label className="text-white">Roll {isRollOver ? 'Over' : 'Under'}</Label>
+                </div>
+                <div className="text-sm text-gray-400">
+                  Win Chance: {winChance}%
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="bg-casino-background p-2 rounded-lg">
+                  <p className="text-xs text-gray-400">Multiplier</p>
+                  <p className="text-lg font-bold text-blue-400">{multiplier}x</p>
+                </div>
+                <div className="bg-casino-background p-2 rounded-lg">
+                  <p className="text-xs text-gray-400">Potential Win</p>
+                  <p className="text-lg font-bold text-green-400">{potentialWin}</p>
+                </div>
+              </div>
+
+              {!gameActive ? (
+                <Button 
+                  className="neon-button w-full" 
+                  onClick={placeBet}
+                  disabled={betAmount <= 0 || betAmount > coins || isRolling}
+                >
+                  <Dice3 className="mr-2 w-4 h-4" />
+                  Roll Dice
+                </Button>
+              ) : (
+                <Button 
+                  className="w-full" 
+                  onClick={resetGame}
+                  disabled={isRolling}
+                >
+                  <RefreshCcw className="mr-2 w-4 h-4" />
+                  New Bet
+                </Button>
+              )}
             </div>
-            
-            <div>
-              <p className="text-gray-400 text-sm">Difficulty</p>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setDifficulty('easy')}
-                  className={`text-white border-casino-muted bg-casino-background hover:bg-green-800/50 ${
-                    (isRollOver && targetNumber === 25) || (!isRollOver && targetNumber === 75) 
-                      ? 'bg-green-800/50 border-green-500' 
-                      : ''
-                  }`}
-                  disabled={gameActive && isRolling}
-                >
-                  Easy
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setDifficulty('medium')}
-                  className={`text-white border-casino-muted bg-casino-background hover:bg-yellow-800/50 ${
-                    targetNumber === 50 ? 'bg-yellow-800/50 border-yellow-500' : ''
-                  }`}
-                  disabled={gameActive && isRolling}
-                >
-                  Medium
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setDifficulty('hard')}
-                  className={`text-white border-casino-muted bg-casino-background hover:bg-red-800/50 ${
-                    (isRollOver && targetNumber === 70) || (!isRollOver && targetNumber === 30)
-                      ? 'bg-red-800/50 border-red-500' 
-                      : ''
-                  }`}
-                  disabled={gameActive && isRolling}
-                >
-                  Hard
-                </Button>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch 
-                checked={isRollOver} 
-                onCheckedChange={toggleRollMode} 
-                disabled={gameActive && isRolling}
-              />
-              <Label>
-                Roll {isRollOver ? 'Over' : 'Under'}
-              </Label>
-            </div>
-            
-            <div>
-              <div className="flex justify-between text-sm text-gray-400 mb-1">
-                <span>Multiplier</span>
-                <span>{multiplier}x</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-400 mb-1">
-                <span>Win Chance</span>
-                <span>{winChance}%</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-400">
-                <span>Potential Win</span>
-                <span>{potentialWin} coins</span>
-              </div>
-            </div>
-            
-            {!gameActive || !isRolling ? (
-              <Button 
-                className="w-full bg-green-600 hover:bg-green-700 mt-2" 
-                onClick={placeBet}
-                disabled={isRolling || betAmount <= 0 || betAmount > coins}
-              >
-                <Dice3 className="mr-2" size={16} />
-                {gameActive ? 'Roll Again' : 'Roll Dice'}
-              </Button>
-            ) : (
-              <Button className="w-full mt-2" disabled>
-                <RefreshCcw className="mr-2 animate-spin" size={16} />
-                Rolling...
-              </Button>
-            )}
-            
-            {gameActive && !isRolling && (
-              <Button 
-                variant="outline" 
-                className="w-full mt-2" 
-                onClick={resetGame}
-              >
-                <RefreshCcw className="mr-2" size={16} />
-                Reset
-              </Button>
-            )}
           </div>
           
-          {/* Game Display */}
-          <div className="flex-1 bg-casino-card rounded-xl p-6">
-            <div className="mb-6">
-              <div className="flex justify-between mb-2 text-sm">
-                <span>0</span>
-                <span>25</span>
-                <span>50</span>
-                <span>75</span>
-                <span>100</span>
-              </div>
-              
-              <div className="relative h-12 bg-casino-background rounded-md overflow-hidden">
-                {/* Red zone (losing area) */}
-                <div 
-                  className="absolute top-0 bottom-0 left-0 bg-red-600/70 h-full rounded-l-md" 
-                  style={{ 
-                    width: `${isRollOver ? targetNumber : 100 - targetNumber}%`,
-                    right: isRollOver ? 'auto' : '0',
-                    left: isRollOver ? '0' : 'auto',
-                    borderRadius: isRollOver ? '0.375rem 0 0 0.375rem' : '0 0.375rem 0.375rem 0'
-                  }}
-                ></div>
-                
-                {/* Green zone (winning area) */}
-                <div 
-                  className="absolute top-0 bottom-0 right-0 bg-green-600/70 h-full rounded-r-md" 
-                  style={{ 
-                    width: `${isRollOver ? 100 - targetNumber : targetNumber}%`,
-                    right: isRollOver ? '0' : 'auto',
-                    left: isRollOver ? 'auto' : '0',
-                    borderRadius: isRollOver ? '0 0.375rem 0.375rem 0' : '0.375rem 0 0 0.375rem'
-                  }}
-                ></div>
+          <div className="game-display bg-casino-card rounded-xl p-4 md:p-6">
+            <div className="relative h-[100px] md:h-[150px] flex items-center">
+              {/* Gradient background */}
+              <div className="absolute inset-0 rounded-lg overflow-hidden">
+                <div className={`absolute inset-0 ${isRollOver ? 'bg-gradient-to-r from-red-500/50 via-yellow-500/50 to-green-500/50' : 'bg-gradient-to-r from-green-500/50 via-yellow-500/50 to-red-500/50'}`}></div>
                 
                 {/* Target line */}
                 <div 
@@ -315,7 +281,7 @@ const DiceGame = () => {
               </div>
               
               {/* Slider */}
-              <div className="py-8">
+              <div className="w-full px-4 md:px-8 z-10">
                 <Slider
                   value={[targetNumber]}
                   min={1}
@@ -323,62 +289,80 @@ const DiceGame = () => {
                   step={1}
                   onValueChange={handleSetTarget}
                   disabled={gameActive && isRolling}
+                  className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:bg-blue-400 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white [&_[role=slider]]:shadow-lg [&_[role=slider]]:cursor-pointer [&_[role=slider]]:hover:bg-blue-500 [&_[role=slider]]:focus:ring-2 [&_[role=slider]]:focus:ring-blue-400 [&_[role=slider]]:focus:ring-offset-2 [&_[role=slider]]:focus:ring-offset-casino-card [&_[role=slider]]:transition-all [&_[role=slider]]:duration-200"
                 />
-                <div className="text-center mt-2">
-                  <span className="text-white font-medium">Target: {formatNumber(targetNumber)}</span>
+                <div className="text-center mt-4">
+                  <span className="text-white font-medium text-lg">Target: {formatNumber(targetNumber)}</span>
                 </div>
               </div>
             </div>
             
             <div className="flex flex-col items-center justify-center py-4">
-              <div className="text-xl font-bold mb-2 flex items-center">
+              <div className="text-xl font-bold mb-2 flex items-center text-white">
                 {isRollOver ? (
-                  <ArrowUp className="text-green-400 mr-2" />
+                  <ArrowUp className="text-green-400 mr-2 w-6 h-6" />
                 ) : (
-                  <ArrowDown className="text-green-400 mr-2" />
+                  <ArrowDown className="text-green-400 mr-2 w-6 h-6" />
                 )}
                 Roll {isRollOver ? 'Over' : 'Under'} {formatNumber(targetNumber)}
               </div>
-              
-              {result !== null && (
-                <div className="mt-4 p-6 rounded-lg bg-casino-background/50 w-full max-w-md">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold mb-2">{formatNumber(result)}</div>
-                    <div className={`text-xl ${win ? 'text-green-400' : 'text-red-400'} font-semibold`}>
-                      {win ? (
-                        <div className="flex items-center justify-center">
-                          <Trophy className="mr-2" />
-                          You Win!
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          <X className="mr-2" />
-                          You Lose
-                        </div>
-                      )}
-                    </div>
-                    {win && (
-                      <div className="text-green-400 mt-2 flex items-center justify-center">
-                        <Coins className="mr-2" size={16} />
-                        +{potentialWin} coins
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
-        
-        <div className="bg-casino-card rounded-xl p-6 mt-8">
-          <h2 className="text-xl font-semibold mb-2 text-white">How to Play</h2>
-          <div className="space-y-2 text-gray-300">
-            <p>1. Set your bet amount</p>
-            <p>2. Choose a target number between 1 and 99</p>
-            <p>3. Select whether to roll over or under your target number</p>
-            <p>4. The dice will roll a random number between 0 and 100</p>
-            <p>5. If your prediction is correct, you win the specified multiplier</p>
-            <p>6. The lower your win chance, the higher your potential reward</p>
+
+        {/* How to Play Section - Below Game Board */}
+        <div className="mt-8 bg-casino-card rounded-xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <HelpCircle className="w-6 h-6 text-blue-400" />
+            <h2 className="text-xl font-semibold text-white">How to Play</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-white">Game Rules</h3>
+                <ul className="text-sm text-gray-300 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400">1.</span>
+                    Set your bet amount and choose a target number (1-99).
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400">2.</span>
+                    Select Roll Over/Under to bet if the roll will be higher/lower than your target.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400">3.</span>
+                    Use preset difficulties (Easy, Medium, Hard) or set your own target.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400">4.</span>
+                    The closer your target is to the edge, the higher the multiplier!
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-white">Strategy Tips</h3>
+                <ul className="text-sm text-gray-300 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-green-600"></span>
+                    <span>Lower risk: Choose targets near 50</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-yellow-600"></span>
+                    <span>Medium risk: Use preset difficulties</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-600"></span>
+                    <span>High risk: Set targets near 1 or 99</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-blue-600"></span>
+                    <span>Use Auto mode for consistent strategy</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>

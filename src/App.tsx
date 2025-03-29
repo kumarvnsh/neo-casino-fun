@@ -12,6 +12,7 @@ import Wheel from "./pages/Wheel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+const isProduction = import.meta.env.MODE === 'production';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -19,7 +20,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename="/neo-casino-fun">
+        <BrowserRouter basename={isProduction ? "/neo-casino-fun" : ""}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dragon-tower" element={<DragonTower />} />
