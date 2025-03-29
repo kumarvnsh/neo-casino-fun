@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
@@ -11,7 +10,6 @@ import {
   Coins,
   AlertTriangle,
   RefreshCcw,
-  List,
   Check,
 } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
@@ -59,10 +57,13 @@ const DIFFICULTY_PRESETS = {
   }
 };
 
+// Define the type for difficulty keys
+type DifficultyKey = keyof typeof DIFFICULTY_PRESETS;
+
 const DragonTower = () => {
   const { coins, updateCoins } = useCoins();
   const [betAmount, setBetAmount] = useState(100);
-  const [difficulty, setDifficulty] = useState<keyof typeof DIFFICULTY_PRESETS>("medium");
+  const [difficulty, setDifficulty] = useState<DifficultyKey>("medium");
   const [gameActive, setGameActive] = useState(false);
   const [currentLevel, setCurrentLevel] = useState(0);
   const [multipliers, setMultipliers] = useState<Array<number>>([]);
@@ -254,6 +255,11 @@ const DragonTower = () => {
   // Calculate current potential win
   const currentWin = currentLevel > 0 ? Math.floor(betAmount * multipliers[currentLevel - 1]) : 0;
   
+  // Handler for difficulty selection - typed to handle DifficultyKey instead of string
+  const handleDifficultyChange = (value: DifficultyKey) => {
+    setDifficulty(value);
+  };
+  
   return (
     <MainLayout>
       <div className="game-layout pb-20">
@@ -312,7 +318,10 @@ const DragonTower = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Difficulty
                   </label>
-                  <Select value={difficulty} onValueChange={setDifficulty}>
+                  <Select 
+                    value={difficulty} 
+                    onValueChange={handleDifficultyChange}
+                  >
                     <SelectTrigger className="w-full bg-casino-background border-casino-muted text-white">
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
@@ -320,7 +329,7 @@ const DragonTower = () => {
                       {Object.entries(DIFFICULTY_PRESETS).map(([key, diffSettings]) => (
                         <SelectItem 
                           key={key} 
-                          value={key}
+                          value={key as DifficultyKey}
                           className="focus:bg-casino-primary/50 focus:text-white"
                         >
                           <div className="flex items-center gap-2">
