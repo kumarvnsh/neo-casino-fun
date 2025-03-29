@@ -9,6 +9,7 @@ import {
   Dice3, 
   Disc, 
   Target,
+  Play,
 } from 'lucide-react';
 
 const GameCard = ({ title, icon, description, to, comingSoon = false }: { 
@@ -95,11 +96,10 @@ const Index = () => {
           />
           
           <GameCard 
-            title="Roulette" 
-            icon={<Target className="text-casino-secondary" />}
-            description="Classic casino roulette with multiple betting options."
-            to="/roulette"
-            comingSoon
+            title="Hi-Lo" 
+            icon={<Play className="text-casino-secondary" />}
+            description="Guess if the next card will be higher or lower to win."
+            to="/hi-lo"
           />
         </div>
         

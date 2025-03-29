@@ -9,6 +9,7 @@ import DragonTower from "./pages/DragonTower";
 import Mines from "./pages/Mines";
 import Dice from "./pages/Dice";
 import Wheel from "./pages/Wheel";
+import HiLo from "./pages/HiLo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/mines" element={<Mines />} />
             <Route path="/dice" element={<Dice />} />
             <Route path="/wheel" element={<Wheel />} />
+            <Route path="/hi-lo" element={<HiLo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

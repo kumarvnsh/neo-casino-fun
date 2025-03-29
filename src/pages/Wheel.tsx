@@ -22,22 +22,42 @@ import { formatCoins } from '@/utils/coinManager';
 
 // Game configuration
 const DIFFICULTY_PRESETS = {
-  easy: { 
-    name: "Easy", 
-    multipliers: ['0', '1.5', '1.7', '2.0', '3.0', '4.0'],
-    description: "More low multipliers, better chances" 
+  easy: {
+    label: "Easy",
+    color: "green",
+    textColor: "text-green-400",
+    segments: [
+      { multiplier: 0, chance: 0.30, color: "#ef4444" },    // Red for 0x
+      { multiplier: 1.5, chance: 0.50, color: "#22c55e" },  // Green for 1.5x
+      { multiplier: 1.7, chance: 0.20, color: "#ffffff" }   // White for 1.7x
+    ]
   },
-  medium: { 
-    name: "Medium", 
-    multipliers: ['0', '0', '1.5', '1.7', '2.0', '3.0', '4.0'],
-    description: "Balanced multiplier distribution" 
+  medium: {
+    label: "Medium",
+    color: "yellow",
+    textColor: "text-yellow-400",
+    segments: [
+      { multiplier: 0, chance: 0.45, color: "#ef4444" },    // Red for 0x
+      { multiplier: 1.5, chance: 0.20, color: "#22c55e" },  // Green for 1.5x
+      { multiplier: 1.7, chance: 0.15, color: "#ffffff" },  // White for 1.7x
+      { multiplier: 2.0, chance: 0.10, color: "#eab308" },  // Yellow for 2x
+      { multiplier: 3.0, chance: 0.10, color: "#3b82f6" }   // Blue for 3x
+    ]
   },
-  hard: { 
-    name: "Hard", 
-    multipliers: ['0', '0', '0', '1.5', '2.0', '3.0', '4.0'],
-    description: "More zero multipliers, higher risk" 
+  hard: {
+    label: "Hard",
+    color: "red",
+    textColor: "text-red-400",
+    segments: [
+      { multiplier: 0, chance: 0.50, color: "#ef4444" },    // Red for 0x
+      { multiplier: 1.5, chance: 0.10, color: "#22c55e" },  // Green for 1.5x
+      { multiplier: 1.7, chance: 0.10, color: "#ffffff" },  // White for 1.7x
+      { multiplier: 2.0, chance: 0.10, color: "#eab308" },  // Yellow for 2x
+      { multiplier: 3.0, chance: 0.10, color: "#3b82f6" },  // Blue for 3x
+      { multiplier: 4.0, chance: 0.10, color: "#f97316" }   // Orange for 4x
+    ]
   }
-} as const;
+};
 
 // Available segment counts
 const SEGMENT_OPTIONS = [20, 25, 30, 35, 40];
@@ -59,18 +79,41 @@ type MultiplierKey = keyof typeof SEGMENT_COLORS;
 
 // Helper function to create wheel segments
 const createWheelSegments = (numSegments: number, difficulty: DifficultyKey) => {
-  const multipliers = DIFFICULTY_PRESETS[difficulty].multipliers;
   const segments = [];
+  const multipliers = DIFFICULTY_PRESETS[difficulty].segments;
   
-  for (let i = 0; i < numSegments; i++) {
-    const multiplierStr = multipliers[Math.floor(Math.random() * multipliers.length)];
-    const multiplier = parseFloat(multiplierStr);
-    const color = SEGMENT_COLORS[multiplierStr as MultiplierKey];
-    
-    segments.push({
-      multiplier,
-      color
-    });
+  // Calculate how many segments each multiplier should have based on its chance
+  const segmentCounts = multipliers.map(m => ({
+    multiplier: m.multiplier,
+    color: m.color,
+    count: Math.round(m.chance * numSegments)
+  }));
+  
+  // Adjust total count to match numSegments
+  const totalCount = segmentCounts.reduce((sum, s) => sum + s.count, 0);
+  if (totalCount !== numSegments) {
+    const diff = numSegments - totalCount;
+    // Add or remove from the highest chance multiplier
+    const highestChanceIndex = multipliers.reduce((maxIndex, m, i) => 
+      m.chance > multipliers[maxIndex].chance ? i : maxIndex
+    , 0);
+    segmentCounts[highestChanceIndex].count += diff;
+  }
+  
+  // Create segments array
+  for (const segment of segmentCounts) {
+    for (let i = 0; i < segment.count; i++) {
+      segments.push({
+        multiplier: segment.multiplier,
+        color: segment.color
+      });
+    }
+  }
+  
+  // Shuffle the segments
+  for (let i = segments.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [segments[i], segments[j]] = [segments[j], segments[i]];
   }
   
   return segments;
@@ -310,15 +353,12 @@ const Wheel = () => {
                       className="focus:bg-casino-primary/50 focus:text-white"
                     >
                       <div className="flex items-center gap-2">
-                        <span>{diffSettings.name}</span>
+                        <span>{diffSettings.label}</span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-sm mt-2 text-gray-400">
-                {DIFFICULTY_PRESETS[difficulty].description}
-              </p>
             </div>
 
             <div>
@@ -362,19 +402,6 @@ const Wheel = () => {
                 </>
               )}
             </Button>
-
-            {/* Multiplier legend */}
-            <div className="mt-4">
-              <p className="text-gray-400 text-sm mb-2">Possible Multipliers</p>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(SEGMENT_COLORS).map(([multiplier, color]) => (
-                  <div key={multiplier} className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></span>
-                    <span className="text-white">{multiplier}x</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
           
           <div className="flex-1 bg-casino-card rounded-xl p-6">
@@ -400,30 +427,56 @@ const Wheel = () => {
           </div>
         </div>
 
-        {/* How to Play */}
-        <div className="p-4 bg-casino-background/50 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <HelpCircle className="w-4 h-4 text-blue-400" />
-            <h3 className="text-sm font-medium text-white">How to Play</h3>
+        {/* How to Play Section - Below Game Board */}
+        <div className="mt-8 bg-casino-card rounded-xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <HelpCircle className="w-6 h-6 text-blue-400" />
+            <h2 className="text-xl font-semibold text-white">How to Play</h2>
           </div>
-          <ul className="text-sm text-gray-300 space-y-2">
-            <li className="flex items-start gap-2">
-              <span className="text-green-400">1.</span>
-              Set your bet amount and choose a segment (1-12).
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-green-400">2.</span>
-              Click Spin to start the wheel animation.
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-green-400">3.</span>
-              The wheel will stop on a random segment.
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-green-400">4.</span>
-              If the wheel stops on your chosen segment, you win!
-            </li>
-          </ul>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-white">Game Rules</h3>
+                <ul className="text-sm text-gray-300 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400">1.</span>
+                    Set your bet amount and choose a segment (1-12).
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400">2.</span>
+                    Click Spin to start the wheel animation.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400">3.</span>
+                    The wheel will stop on a random segment.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400">4.</span>
+                    If the wheel stops on your chosen segment, you win!
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-white">Difficulty Levels</h3>
+                <ul className="text-sm text-gray-300 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-green-600"></span>
+                    <span>Easy: 0x (30%), 1.5x (50%), 1.7x (20%)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-yellow-600"></span>
+                    <span>Medium: 0x (45%), 1.5x (20%), 1.7x (15%), 2x (10%), 3x (10%)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-600"></span>
+                    <span>Hard: 0x (50%), 1.5x-4x (10% each)</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </MainLayout>

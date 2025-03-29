@@ -124,6 +124,13 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               >
                 Wheel
               </Link>
+              <Link 
+                to="/hi-lo" 
+                className="block px-4 py-2 text-white hover:bg-casino-accent/20 rounded-lg"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Hi-Lo
+              </Link>
             </div>
           </nav>
         )}
