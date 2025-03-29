@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>NeoVegas - Redirecting...</title>
+    <script>
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      var pathSegmentsToKeep = 1;
+      var l = window.location;
+      var r = l.pathname.split('/').slice(1);
+      var s = r.slice(0, pathSegmentsToKeep).join('/') + '/';
+      var m = l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/');
+      var f = l.hash;
+      var d = l.search;
+      var p = l.pathname.slice(0, 1) + s + m + f + d;
+      l.replace(l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') + p);
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <h1>Redirecting...</h1>
+      <p>If you are not redirected automatically, please click <a href="/neo-vegas/">here</a>.</p>
+    </noscript>
+  </body>
+</html> 
