@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/neo-casino-fun/',  // Base URL for GitHub Pages deployment
+  base: mode === 'production' ? '/neo-casino-fun/' : '/',  // Base URL for GitHub Pages deployment
   server: {
     host: "::",
     port: 8080,
