@@ -334,7 +334,6 @@ const DragonTower = () => {
               </p>
             </div>
             
-            {/* Game controls that change based on game state */}
             {!gameActive ? (
               <Button 
                 className="neon-button w-full" 
@@ -402,7 +401,7 @@ const DragonTower = () => {
           </div>
           
           <div className="flex-1 bg-casino-card rounded-xl p-6 relative">
-            <div className="flex flex-col-reverse gap-1 max-w-3xl mx-auto" style={{ height: "160px" }}>
+            <div className="flex flex-col-reverse gap-1 mx-auto" style={{ height: "120px", maxWidth: "100%" }}>
               {Array(MAX_ROWS).fill(0).map((_, rowIndex) => {
                 const isCurrentLevel = rowIndex === currentLevel && !isGameOver;
                 const isFutureLevel = rowIndex > currentLevel;
@@ -413,7 +412,10 @@ const DragonTower = () => {
                   <div 
                     key={rowIndex} 
                     className={`grid gap-1 relative ${isCurrentLevel ? 'z-10' : ''}`}
-                    style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}
+                    style={{ 
+                      gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))`,
+                      width: "100%"
+                    }}
                   >
                     {Array(columnsCount).fill(0).map((_, colIndex) => {
                       const isRevealed = revealedTiles[rowIndex]?.[colIndex];
@@ -435,18 +437,17 @@ const DragonTower = () => {
                             ${isLoading && isCurrentLevel ? 'animate-pulse' : ''}
                             ${isCurrentLevel ? 'shadow-lg shadow-primary/20' : ''}
                           `}
-                          style={{ height: '14px', minHeight: '14px' }}
                         >
                           {isLoading && rowIndex === currentLevel && !isRevealed ? (
-                            <div className="w-1 h-1 rounded-full bg-casino-muted/30 animate-pulse"></div>
+                            <div className="rounded-full bg-casino-muted/30 animate-pulse" style={{ width: '20%', height: '20%' }}></div>
                           ) : isRevealed ? (
                             isDragon ? (
-                              <Skull className="text-red-500" size={8} />
+                              <Skull className="text-red-500" size={Math.max(8, columnsCount === 2 ? 12 : 10)} />
                             ) : (
-                              <Check className="text-green-400" size={8} />
+                              <Check className="text-green-400" size={Math.max(8, columnsCount === 2 ? 12 : 10)} />
                             )
                           ) : rowIndex === MAX_ROWS - 1 && isCurrentLevel ? (
-                            <Trophy className="text-yellow-400 opacity-50" size={8} />
+                            <Trophy className="text-yellow-400 opacity-50" size={Math.max(8, columnsCount === 2 ? 12 : 10)} />
                           ) : null}
                         </div>
                       );
