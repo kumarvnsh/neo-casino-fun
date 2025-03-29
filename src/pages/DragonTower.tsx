@@ -415,7 +415,7 @@ const DragonTower = () => {
             </div>
             
             <div className="flex-1 bg-casino-card rounded-xl p-6 relative">
-              <div className="flex flex-col-reverse gap-3 max-w-3xl mx-auto">
+              <div className="flex flex-col-reverse gap-1 max-w-3xl mx-auto" style={{ maxHeight: "300px" }}>
                 {Array(MAX_ROWS).fill(0).map((_, rowIndex) => {
                   const isCurrentLevel = rowIndex === currentLevel && !isGameOver;
                   const isFutureLevel = rowIndex > currentLevel;
@@ -425,7 +425,7 @@ const DragonTower = () => {
                   return (
                     <div 
                       key={rowIndex} 
-                      className={`grid gap-3 relative ${isCurrentLevel ? 'z-10' : ''}`}
+                      className={`grid gap-2 relative ${isCurrentLevel ? 'z-10' : ''}`}
                       style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}
                     >
                       {Array(columnsCount).fill(0).map((_, colIndex) => {
@@ -448,19 +448,20 @@ const DragonTower = () => {
                               ${isLoading && isCurrentLevel ? 'animate-pulse' : ''}
                               ${isCurrentLevel ? 'shadow-lg shadow-primary/20' : ''}
                             `}
+                            style={{ height: '30px', minHeight: '30px' }}
                           >
                             {isLoading && rowIndex === currentLevel && !isRevealed ? (
-                              <Skeleton className="w-6 h-6 rounded-full bg-casino-muted/30" />
+                              <div className="w-4 h-4 rounded-full bg-casino-muted/30 animate-pulse"></div>
                             ) : isRevealed ? (
                               isDragon ? (
-                                <Skull className="text-red-500" size={24} />
+                                <Skull className="text-red-500" size={16} />
                               ) : (
-                                <Check className="text-green-400" size={24} />
+                                <Check className="text-green-400" size={16} />
                               )
                             ) : rowIndex === MAX_ROWS - 1 && isCurrentLevel ? (
-                              <Trophy className="text-yellow-400 opacity-50" size={24} />
+                              <Trophy className="text-yellow-400 opacity-50" size={16} />
                             ) : isCurrentLevel ? (
-                              <span className="text-lg text-white font-bold opacity-70">?</span>
+                              <span className="text-sm text-white font-bold opacity-70">?</span>
                             ) : isFutureLevel ? (
                               <span className="text-xs text-gray-500 opacity-50">{rowIndex + 1}</span>
                             ) : null}

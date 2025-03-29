@@ -14,6 +14,12 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
+import { formatCoins } from '@/utils/coinManager';
+
+// Constants
+const GRID_SIZE = 25; // 5x5 grid
+const MIN_MINES = 1;
+const MAX_MINES = 24;
 
 const Mines = () => {
   const { coins, updateCoins } = useCoins();
@@ -26,8 +32,9 @@ const Mines = () => {
   const [win, setWin] = useState(false);
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
   const [nextMultiplier, setNextMultiplier] = useState(1);
-  
-  const GRID_SIZE = 25; // 5x5 grid
+  const [isAutoMode, setIsAutoMode] = useState(false);
+  const [autoRevealed, setAutoRevealed] = useState(0);
+  const [autoTarget, setAutoTarget] = useState(5);
   
   // Calculate the next tile multiplier based on current state
   useEffect(() => {
@@ -46,7 +53,7 @@ const Mines = () => {
       updateCoins(finalWin);
       toast({
         title: "Congratulations!",
-        description: `You found all gems and won ${finalWin} coins!`,
+        description: `You found all gems and won ${formatCoins(finalWin)} coins!`,
       });
       return;
     }
@@ -55,7 +62,7 @@ const Mines = () => {
     const odds = (remainingSafeTiles) / (GRID_SIZE - revealedCount);
     const nextMult = Number((currentMultiplier * (1 / odds)).toFixed(2));
     setNextMultiplier(nextMult);
-  }, [revealed, gameActive, mineCount, currentMultiplier, betAmount]);
+  }, [revealed, gameActive, mineCount, currentMultiplier, betAmount, updateCoins]);
   
   // Start a new game
   const startGame = () => {
@@ -99,6 +106,8 @@ const Mines = () => {
     setIsGameOver(false);
     setWin(false);
     setCurrentMultiplier(1);
+    setIsAutoMode(false);
+    setAutoRevealed(0);
     
     // Calculate first multiplier
     const odds = (GRID_SIZE - mineCount) / GRID_SIZE;
@@ -135,7 +144,28 @@ const Mines = () => {
     } else {
       // Safe tile - update multiplier
       setCurrentMultiplier(nextMultiplier);
+      
+      // If in auto mode, increment counter
+      if (isAutoMode) {
+        const newAutoRevealed = autoRevealed + 1;
+        setAutoRevealed(newAutoRevealed);
+        
+        // Check if we've reached our auto target
+        if (newAutoRevealed >= autoTarget) {
+          cashOut();
+        }
+      }
     }
+  };
+  
+  // Start auto mode
+  const startAutoMode = () => {
+    if (!gameActive || isGameOver) return;
+    setIsAutoMode(true);
+    toast({
+      title: "Auto Mode Activated",
+      description: `Will auto-cashout after revealing ${autoTarget} safe gems.`,
+    });
   };
   
   // Cash out current winnings
@@ -153,10 +183,11 @@ const Mines = () => {
     setRevealed(finalRevealed);
     setIsGameOver(true);
     setWin(true);
+    setIsAutoMode(false);
     
     toast({
       title: "Cashed Out!",
-      description: `You cashed out and won ${winAmount} coins!`,
+      description: `You cashed out and won ${formatCoins(winAmount)} coins!`,
     });
   };
   
@@ -164,6 +195,7 @@ const Mines = () => {
     setGameActive(false);
     setIsGameOver(false);
     setWin(false);
+    setIsAutoMode(false);
   };
   
   // Calculate current potential win
@@ -173,6 +205,9 @@ const Mines = () => {
   // Calculate opened safe tiles count
   const openedSafeTiles = revealed.filter((r, i) => r && grid[i] === 0).length;
   const totalSafeTiles = GRID_SIZE - mineCount;
+  
+  // Calculate probability of next safe click
+  const safeProb = Math.floor(((GRID_SIZE - mineCount - openedSafeTiles) / (GRID_SIZE - openedSafeTiles)) * 100);
   
   return (
     <MainLayout>
@@ -188,7 +223,7 @@ const Mines = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Bet Amount: {betAmount} coins
+                    Bet Amount: {formatCoins(betAmount)} coins
                   </label>
                   <div className="flex items-center gap-2">
                     <Input
@@ -215,6 +250,13 @@ const Mines = () => {
                     >
                       2×
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setBetAmount(Math.min(coins, 1000))}
+                      className="text-white border-casino-muted"
+                    >
+                      Max
+                    </Button>
                   </div>
                 </div>
                 
@@ -224,8 +266,8 @@ const Mines = () => {
                   </label>
                   <Slider
                     value={[mineCount]}
-                    min={1}
-                    max={24}
+                    min={MIN_MINES}
+                    max={MAX_MINES}
                     step={1}
                     onValueChange={(value) => setMineCount(value[0])}
                     className="py-4"
@@ -247,10 +289,10 @@ const Mines = () => {
           </div>
         ) : (
           <div className="mb-6 flex flex-col md:flex-row gap-4 items-start">
-            <div className="bg-casino-card rounded-xl p-6 w-full md:w-64 flex flex-col gap-4">
+            <div className="bg-casino-card rounded-xl p-6 w-full md:w-80 flex flex-col gap-4">
               <div>
                 <p className="text-gray-400 text-sm">Bet Amount</p>
-                <p className="text-xl font-bold text-white">{betAmount} coins</p>
+                <p className="text-xl font-bold text-white">{formatCoins(betAmount)} coins</p>
               </div>
               
               <div>
@@ -265,13 +307,13 @@ const Mines = () => {
               
               <div>
                 <p className="text-gray-400 text-sm">Current Win</p>
-                <p className="text-xl font-bold text-green-500">{currentWin} coins</p>
+                <p className="text-xl font-bold text-green-500">{formatCoins(currentWin)} coins</p>
               </div>
               
               {!isGameOver && (
                 <div>
                   <p className="text-gray-400 text-sm">Next Tile Multiplier</p>
-                  <p className="text-lg font-bold text-blue-400">{nextMultiplier}x ({nextWin} coins)</p>
+                  <p className="text-lg font-bold text-blue-400">{nextMultiplier}x ({formatCoins(nextWin)} coins)</p>
                 </div>
               )}
               
@@ -280,14 +322,59 @@ const Mines = () => {
                 <p className="text-lg font-bold text-purple-400">{openedSafeTiles} / {totalSafeTiles}</p>
               </div>
               
-              {!isGameOver && gameActive && (
-                <Button 
-                  className="w-full bg-green-600 hover:bg-green-700 mt-2" 
-                  onClick={cashOut}
-                >
-                  <Coins className="mr-2" size={16} />
-                  Cash Out ({currentMultiplier}x)
-                </Button>
+              <div>
+                <p className="text-gray-400 text-sm">Safe Probability</p>
+                <p className="text-lg font-bold text-yellow-400">{safeProb}%</p>
+              </div>
+              
+              {!isGameOver && !isAutoMode && (
+                <div className="space-y-2">
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700" 
+                    onClick={cashOut}
+                  >
+                    <Coins className="mr-2" size={16} />
+                    Cash Out ({currentMultiplier}x)
+                  </Button>
+                  
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={totalSafeTiles - openedSafeTiles}
+                      value={autoTarget}
+                      onChange={(e) => setAutoTarget(Number(e.target.value))}
+                      className="bg-casino-background border-casino-muted text-white"
+                      placeholder="# of clicks"
+                    />
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700" 
+                      onClick={startAutoMode}
+                    >
+                      Auto
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {isAutoMode && !isGameOver && (
+                <div>
+                  <div className="mb-2 text-sm text-white">
+                    Auto Mode: {autoRevealed} / {autoTarget} gems revealed
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full" 
+                      style={{ width: `${(autoRevealed / autoTarget) * 100}%` }}
+                    ></div>
+                  </div>
+                  <Button 
+                    className="w-full mt-2 bg-red-600 hover:bg-red-700" 
+                    onClick={() => setIsAutoMode(false)}
+                  >
+                    Cancel Auto Mode
+                  </Button>
+                </div>
               )}
               
               {isGameOver && (
@@ -349,7 +436,7 @@ const Mines = () => {
                   </div>
                   <p className="text-gray-300 mt-1">
                     {win 
-                      ? `You cashed out with a ${currentMultiplier}x multiplier and won ${currentWin} coins!` 
+                      ? `You cashed out with a ${currentMultiplier}x multiplier and won ${formatCoins(currentWin)} coins!` 
                       : 'You hit a mine! Better luck next time.'}
                   </p>
                 </div>
@@ -367,7 +454,7 @@ const Mines = () => {
             <p>4. If you hit a mine, you lose your bet</p>
             <p>5. You can cash out at any time to secure your winnings</p>
             <p>6. More mines = higher risk but higher potential rewards</p>
-            <p>7. Try to find all gems to win the maximum amount!</p>
+            <p>7. Use Auto mode to automatically stop after revealing a set number of gems</p>
           </div>
         </div>
       </div>
