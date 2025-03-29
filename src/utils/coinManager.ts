@@ -1,4 +1,3 @@
-
 // Local storage key for coins
 const COIN_STORAGE_KEY = 'neovegas_coins';
 const DEFAULT_COINS = 10000;
@@ -57,4 +56,11 @@ export const updateCoins = (changeAmount: number): number => {
 export const resetCoins = (): number => {
   setCoins(DEFAULT_COINS);
   return DEFAULT_COINS;
+};
+
+/**
+ * Format coin value with commas for display
+ */
+export const formatCoins = (amount: number): string => {
+  return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
