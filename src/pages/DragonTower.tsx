@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   RefreshCcw,
   Check,
+  Play,
 } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import {
@@ -258,262 +259,243 @@ const DragonTower = () => {
   
   return (
     <MainLayout>
-      <div className="game-layout pb-20">
+      <div className="game-layout">
         <h1 className="game-title flex items-center gap-2">
           <Skull className="h-8 w-8 text-red-500" />
           Dragon Tower
         </h1>
         
-        {!gameActive ? (
-          <div className="control-panel">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2 text-white">Game Setup</h2>
-              <p className="text-gray-400 mb-4">Choose your difficulty and bet amount</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Bet Amount: {formatCoins(betAmount)} coins
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={10}
-                      max={coins}
-                      value={betAmount}
-                      onChange={(e) => setBetAmount(Number(e.target.value))}
-                      className="bg-casino-background border-casino-muted text-white"
-                    />
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setBetAmount(Math.floor(betAmount / 2))}
-                      className="text-white border-casino-muted"
-                      disabled={betAmount <= 10}
+        <div className="mb-6 flex flex-col md:flex-row gap-4 items-start">
+          <div className="bg-casino-card rounded-xl p-6 w-full md:w-64 flex flex-col gap-4">
+            <div>
+              <p className="text-gray-400 text-sm mb-2">Bet Amount</p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={10}
+                  max={coins}
+                  value={betAmount}
+                  onChange={(e) => setBetAmount(Number(e.target.value))}
+                  className="bg-casino-background border-casino-muted text-white"
+                  disabled={gameActive && !isGameOver && !isLoading}
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => setBetAmount(Math.floor(betAmount / 2))}
+                  className="text-white border-casino-muted"
+                  disabled={(betAmount <= 10) || (gameActive && !isGameOver && !isLoading)}
+                >
+                  ½
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setBetAmount(Math.min(betAmount * 2, coins))}
+                  className="text-white border-casino-muted"
+                  disabled={(betAmount * 2 > coins) || (gameActive && !isGameOver && !isLoading)}
+                >
+                  2×
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <p className="text-gray-400 text-sm mb-2">Difficulty</p>
+              <Select 
+                value={difficulty} 
+                onValueChange={handleDifficultyChange}
+                disabled={gameActive && !isGameOver && !isLoading}
+              >
+                <SelectTrigger className="w-full bg-casino-background border-casino-muted text-white">
+                  <SelectValue placeholder="Select difficulty" />
+                </SelectTrigger>
+                <SelectContent className="bg-casino-card border-casino-muted text-white">
+                  {Object.entries(DIFFICULTY_PRESETS).map(([key, diffSettings]) => (
+                    <SelectItem 
+                      key={key} 
+                      value={key as DifficultyKey}
+                      className="focus:bg-casino-primary/50 focus:text-white"
                     >
-                      ½
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setBetAmount(Math.min(betAmount * 2, coins))}
-                      className="text-white border-casino-muted"
-                      disabled={betAmount * 2 > coins}
-                    >
-                      2×
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setBetAmount(Math.min(coins, 1000))}
-                      className="text-white border-casino-muted"
-                    >
-                      Max
-                    </Button>
-                  </div>
-                </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`w-3 h-3 rounded-full ${diffSettings.color}`}></span>
+                        <span>{diffSettings.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm mt-2 text-gray-400">
+                {DIFFICULTY_PRESETS[difficulty].description}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm mt-2 text-gray-400">
+                Max Win: {formatCoins(Math.floor(betAmount * multipliers[MAX_ROWS - 1]))} coins
+              </p>
+            </div>
+            
+            {/* Game controls that change based on game state */}
+            {!gameActive ? (
+              <Button 
+                className="neon-button w-full" 
+                onClick={startGame}
+                disabled={betAmount <= 0 || betAmount > coins}
+              >
+                <Play className="mr-2" size={16} />
+                Start Game
+              </Button>
+            ) : (
+              <>
+                {!isGameOver && currentLevel > 0 && (
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700 mt-2" 
+                    onClick={cashOut}
+                    disabled={isLoading}
+                  >
+                    <Coins className="mr-2" size={16} />
+                    Cash Out ({multipliers[currentLevel - 1]}x)
+                  </Button>
+                )}
+                
+                {isGameOver && (
+                  <Button 
+                    className="w-full mt-2" 
+                    onClick={resetGame}
+                  >
+                    <RefreshCcw className="mr-2" size={16} />
+                    Play Again
+                  </Button>
+                )}
+              </>
+            )}
+
+            {/* Current game stats */}
+            {gameActive && (
+              <>
+                <div className="h-px bg-casino-muted my-2"></div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Difficulty
-                  </label>
-                  <Select 
-                    value={difficulty} 
-                    onValueChange={handleDifficultyChange}
-                  >
-                    <SelectTrigger className="w-full bg-casino-background border-casino-muted text-white">
-                      <SelectValue placeholder="Select difficulty" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-casino-card border-casino-muted text-white">
-                      {Object.entries(DIFFICULTY_PRESETS).map(([key, diffSettings]) => (
-                        <SelectItem 
-                          key={key} 
-                          value={key as DifficultyKey}
-                          className="focus:bg-casino-primary/50 focus:text-white"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className={`w-3 h-3 rounded-full ${diffSettings.color}`}></span>
-                            <span>{diffSettings.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm mt-2 text-gray-400">
-                    {DIFFICULTY_PRESETS[difficulty].description}
-                  </p>
+                  <p className="text-gray-400 text-sm">Current Level</p>
+                  <p className="text-xl font-bold text-white">{currentLevel} / {MAX_ROWS}</p>
                 </div>
-              </div>
-              
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-gray-300 mb-2">Potential Multipliers:</h3>
-                <div className="flex flex-wrap gap-2 text-sm">
-                  {multipliers.map((mult, i) => (
-                    <div key={i} className={`px-3 py-1 rounded-full text-sm ${DIFFICULTY_PRESETS[difficulty].color}/30 ${DIFFICULTY_PRESETS[difficulty].textColor}`}>
-                      Row {i + 1}: {mult}x
-                    </div>
-                  ))}
-                </div>
-                <p className="text-sm mt-2 text-gray-400">
-                  Max Win: {formatCoins(Math.floor(betAmount * multipliers[MAX_ROWS - 1]))} coins
-                </p>
-              </div>
-            </div>
-            
-            <Button 
-              className="neon-button w-full md:w-auto" 
-              onClick={startGame}
-              disabled={betAmount <= 0 || betAmount > coins}
-            >
-              Start Game
-            </Button>
-          </div>
-        ) : (
-          <div className="mb-6 flex flex-col md:flex-row gap-4 items-start">
-            <div className="bg-casino-card rounded-xl p-6 w-full md:w-64 flex flex-col gap-4">
-              <div>
-                <p className="text-gray-400 text-sm">Bet Amount</p>
-                <p className="text-xl font-bold text-white">{formatCoins(betAmount)} coins</p>
-              </div>
-              
-              <div>
-                <p className="text-gray-400 text-sm">Difficulty</p>
-                <p className={`text-xl font-bold ${DIFFICULTY_PRESETS[difficulty].textColor}`}>
-                  {DIFFICULTY_PRESETS[difficulty].name}
-                </p>
-              </div>
-              
-              <div>
-                <p className="text-gray-400 text-sm">Current Level</p>
-                <p className="text-xl font-bold text-white">{currentLevel} / {MAX_ROWS}</p>
-              </div>
-              
-              {currentLevel > 0 && (
-                <div>
-                  <p className="text-gray-400 text-sm">Current Win</p>
-                  <p className="text-xl font-bold text-green-500">{formatCoins(currentWin)} coins</p>
-                </div>
-              )}
-              
-              {!isGameOver && gameActive && currentLevel > 0 && (
-                <Button 
-                  className="w-full bg-green-600 hover:bg-green-700 mt-2" 
-                  onClick={cashOut}
-                  disabled={isLoading}
-                >
-                  <Coins className="mr-2" size={16} />
-                  Cash Out ({multipliers[currentLevel - 1]}x)
-                </Button>
-              )}
-              
-              {isGameOver && (
-                <Button 
-                  className="w-full mt-2" 
-                  onClick={resetGame}
-                >
-                  <RefreshCcw className="mr-2" size={16} />
-                  Play Again
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex-1 bg-casino-card rounded-xl p-6 relative">
-              <div className="flex flex-col-reverse gap-1 max-w-3xl mx-auto" style={{ maxHeight: "300px" }}>
-                {Array(MAX_ROWS).fill(0).map((_, rowIndex) => {
-                  const isCurrentLevel = rowIndex === currentLevel && !isGameOver;
-                  const isFutureLevel = rowIndex > currentLevel;
-                  const isPastLevel = rowIndex < currentLevel;
-                  const columnsCount = DIFFICULTY_PRESETS[difficulty].columns;
-                  
-                  return (
-                    <div 
-                      key={rowIndex} 
-                      className={`grid gap-2 relative ${isCurrentLevel ? 'z-10' : ''}`}
-                      style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}
-                    >
-                      {Array(columnsCount).fill(0).map((_, colIndex) => {
-                        const isRevealed = revealedTiles[rowIndex]?.[colIndex];
-                        const isDragon = tiles[rowIndex]?.[colIndex] === 1;
-                        const isClickable = isCurrentLevel && !isLoading;
-                        
-                        return (
-                          <div
-                            key={colIndex}
-                            onClick={() => handleTileClick(rowIndex, colIndex)}
-                            className={`
-                              aspect-square flex items-center justify-center rounded-lg transition-all duration-300
-                              ${isClickable 
-                                ? `cursor-pointer border-2 border-${DIFFICULTY_PRESETS[difficulty].color}/50 ${DIFFICULTY_PRESETS[difficulty].color}/30 hover:${DIFFICULTY_PRESETS[difficulty].color}/50` 
-                                : isFutureLevel ? 'bg-casino-background/50 cursor-not-allowed opacity-50' : 'bg-casino-background'}
-                              ${isPastLevel && !isRevealed ? 'bg-green-800/30' : ''}
-                              ${isRevealed && isDragon ? 'bg-red-900/50 border-red-600 border-2' : ''}
-                              ${isRevealed && !isDragon ? 'bg-green-700/50 border-green-500 border-2' : ''}
-                              ${isLoading && isCurrentLevel ? 'animate-pulse' : ''}
-                              ${isCurrentLevel ? 'shadow-lg shadow-primary/20' : ''}
-                            `}
-                            style={{ height: '30px', minHeight: '30px' }}
-                          >
-                            {isLoading && rowIndex === currentLevel && !isRevealed ? (
-                              <div className="w-4 h-4 rounded-full bg-casino-muted/30 animate-pulse"></div>
-                            ) : isRevealed ? (
-                              isDragon ? (
-                                <Skull className="text-red-500" size={16} />
-                              ) : (
-                                <Check className="text-green-400" size={16} />
-                              )
-                            ) : rowIndex === MAX_ROWS - 1 && isCurrentLevel ? (
-                              <Trophy className="text-yellow-400 opacity-50" size={16} />
-                            ) : isCurrentLevel ? (
-                              <span className="text-sm text-white font-bold opacity-70">?</span>
-                            ) : isFutureLevel ? (
-                              <span className="text-xs text-gray-500 opacity-50">{rowIndex + 1}</span>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                      
-                      <div className="absolute -right-16 top-1/2 transform -translate-y-1/2 hidden md:flex items-center">
-                        <span className={`px-2 py-1 rounded ${isCurrentLevel ? DIFFICULTY_PRESETS[difficulty].color : 'bg-casino-muted/30'} text-xs font-bold`}>
-                          {multipliers[rowIndex]}x
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {/* Progress indicator */}
-              {gameActive && !isGameOver && (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-casino-muted/20">
-                  <div 
-                    className="bg-gradient-to-b from-green-500 to-yellow-500"
-                    style={{ 
-                      height: `${(currentLevel / MAX_ROWS) * 100}%`,
-                      transition: 'height 0.5s ease-out' 
-                    }}
-                  ></div>
-                </div>
-              )}
-              
-              {isGameOver && (
-                <div className={`mt-4 p-4 rounded-lg ${win ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
-                  <div className="flex items-center gap-2">
-                    {win ? (
-                      <Trophy className="text-yellow-400" size={20} />
-                    ) : (
-                      <AlertTriangle className="text-red-400" size={20} />
-                    )}
-                    <h3 className="font-semibold text-white">
-                      {win ? 'You Win!' : 'Game Over!'}
-                    </h3>
+                
+                {currentLevel > 0 && (
+                  <div>
+                    <p className="text-gray-400 text-sm">Current Win</p>
+                    <p className="text-xl font-bold text-green-500">{formatCoins(currentWin)} coins</p>
                   </div>
-                  <p className="text-gray-300 mt-1">
-                    {win 
-                      ? `You reached level ${currentLevel} and won ${formatCoins(currentWin)} coins!` 
-                      : 'You hit a dragon! Better luck next time.'}
-                  </p>
-                </div>
-              )}
+                )}
+              </>
+            )}
+
+            {/* Game stats */}
+            <div className="mt-4">
+              <h3 className="text-sm font-medium text-gray-300 mb-2">Multipliers:</h3>
+              <div className="flex flex-wrap gap-2 text-xs">
+                {multipliers.slice(0, 5).map((mult, i) => (
+                  <div key={i} className={`px-2 py-1 rounded-full ${DIFFICULTY_PRESETS[difficulty].color}/30 ${DIFFICULTY_PRESETS[difficulty].textColor}`}>
+                    {i + 1}: {mult}x
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        )}
+          
+          <div className="flex-1 bg-casino-card rounded-xl p-6 relative">
+            <div className="flex flex-col-reverse gap-1 max-w-3xl mx-auto" style={{ height: "160px" }}>
+              {Array(MAX_ROWS).fill(0).map((_, rowIndex) => {
+                const isCurrentLevel = rowIndex === currentLevel && !isGameOver;
+                const isFutureLevel = rowIndex > currentLevel;
+                const isPastLevel = rowIndex < currentLevel;
+                const columnsCount = DIFFICULTY_PRESETS[difficulty].columns;
+                
+                return (
+                  <div 
+                    key={rowIndex} 
+                    className={`grid gap-1 relative ${isCurrentLevel ? 'z-10' : ''}`}
+                    style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}
+                  >
+                    {Array(columnsCount).fill(0).map((_, colIndex) => {
+                      const isRevealed = revealedTiles[rowIndex]?.[colIndex];
+                      const isDragon = tiles[rowIndex]?.[colIndex] === 1;
+                      const isClickable = isCurrentLevel && !isLoading;
+                      
+                      return (
+                        <div
+                          key={colIndex}
+                          onClick={() => handleTileClick(rowIndex, colIndex)}
+                          className={`
+                            aspect-square flex items-center justify-center rounded-md transition-all duration-300
+                            ${isClickable 
+                              ? `cursor-pointer border-2 border-${DIFFICULTY_PRESETS[difficulty].color}/50 ${DIFFICULTY_PRESETS[difficulty].color}/30 hover:${DIFFICULTY_PRESETS[difficulty].color}/50` 
+                              : isFutureLevel ? 'bg-casino-background/50 cursor-not-allowed opacity-50' : 'bg-casino-background'}
+                            ${isPastLevel && !isRevealed ? 'bg-green-800/30' : ''}
+                            ${isRevealed && isDragon ? 'bg-red-900/50 border-red-600 border-2' : ''}
+                            ${isRevealed && !isDragon ? 'bg-green-700/50 border-green-500 border-2' : ''}
+                            ${isLoading && isCurrentLevel ? 'animate-pulse' : ''}
+                            ${isCurrentLevel ? 'shadow-lg shadow-primary/20' : ''}
+                          `}
+                          style={{ height: '14px', minHeight: '14px' }}
+                        >
+                          {isLoading && rowIndex === currentLevel && !isRevealed ? (
+                            <div className="w-1 h-1 rounded-full bg-casino-muted/30 animate-pulse"></div>
+                          ) : isRevealed ? (
+                            isDragon ? (
+                              <Skull className="text-red-500" size={8} />
+                            ) : (
+                              <Check className="text-green-400" size={8} />
+                            )
+                          ) : rowIndex === MAX_ROWS - 1 && isCurrentLevel ? (
+                            <Trophy className="text-yellow-400 opacity-50" size={8} />
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                    
+                    <div className="absolute -right-12 top-1/2 transform -translate-y-1/2 hidden md:flex items-center">
+                      <span className={`px-1 py-0.5 rounded text-xs ${isCurrentLevel ? DIFFICULTY_PRESETS[difficulty].color : 'bg-casino-muted/30'}`}>
+                        {multipliers[rowIndex]}x
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Progress indicator */}
+            {gameActive && !isGameOver && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-casino-muted/20">
+                <div 
+                  className="bg-gradient-to-b from-green-500 to-yellow-500"
+                  style={{ 
+                    height: `${(currentLevel / MAX_ROWS) * 100}%`,
+                    transition: 'height 0.5s ease-out' 
+                  }}
+                ></div>
+              </div>
+            )}
+            
+            {isGameOver && (
+              <div className={`mt-4 p-4 rounded-lg ${win ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
+                <div className="flex items-center gap-2">
+                  {win ? (
+                    <Trophy className="text-yellow-400" size={20} />
+                  ) : (
+                    <AlertTriangle className="text-red-400" size={20} />
+                  )}
+                  <h3 className="font-semibold text-white">
+                    {win ? 'You Win!' : 'Game Over!'}
+                  </h3>
+                </div>
+                <p className="text-gray-300 mt-1">
+                  {win 
+                    ? `You reached level ${currentLevel} and won ${formatCoins(currentWin)} coins!` 
+                    : 'You hit a dragon! Better luck next time.'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
         
         <div className="bg-casino-card rounded-xl p-6 mt-8">
           <h2 className="text-xl font-semibold mb-2 text-white">How to Play</h2>
@@ -525,16 +507,6 @@ const DragonTower = () => {
             <p>5. You can cash out at any time to secure your winnings</p>
             <p>6. If you hit a dragon, you lose your entire bet</p>
             <p>7. Reach the top of the tower for the maximum reward!</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            {Object.entries(DIFFICULTY_PRESETS).map(([key, diffSettings]) => (
-              <div key={key} className={`p-3 rounded-lg ${diffSettings.color}/20 border border-${diffSettings.color}/30`}>
-                <h3 className={`font-semibold ${diffSettings.textColor} mb-1`}>{diffSettings.name}</h3>
-                <p className="text-sm text-gray-400">{diffSettings.description}</p>
-                <p className="text-xs mt-1 text-gray-500">Base Multiplier: {diffSettings.baseMultiplier}x</p>
-              </div>
-            ))}
           </div>
         </div>
       </div>

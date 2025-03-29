@@ -82,7 +82,6 @@ const Index = () => {
             icon={<Dice3 className="text-casino-accent" size={48} />}
             description="Predict if the dice will roll over or under your number."
             to="/dice"
-            comingSoon
           />
           
           <GameCard 
