@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
@@ -118,24 +119,19 @@ const DragonTower = () => {
     const difficultySettings = DIFFICULTY_PRESETS[difficulty];
     const columns = difficultySettings.columns;
     
-    // Generate safe paths for each row
-    const safePaths = Array(MAX_ROWS)
+    // Generate dragon position for each row (only one dragon per row)
+    const dragonPositions = Array(MAX_ROWS)
       .fill(0)
       .map(() => Math.floor(Math.random() * columns));
     
-    // Initialize tiles as empty (0 = empty, 1 = dragon)
+    // Initialize tiles with dragons (0 = safe, 1 = dragon)
     const newTiles = Array(MAX_ROWS)
       .fill(0)
-      .map(() => Array(columns).fill(0));
-      
-    // Place dragons on unsafe tiles
-    for (let row = 0; row < MAX_ROWS; row++) {
-      for (let col = 0; col < columns; col++) {
-        if (col !== safePaths[row]) {
-          newTiles[row][col] = 1; // 1 = dragon
-        }
-      }
-    }
+      .map((_, rowIndex) => {
+        return Array(columns).fill(0).map((_, colIndex) => {
+          return colIndex === dragonPositions[rowIndex] ? 1 : 0;
+        });
+      });
     
     // Initialize revealed state for all tiles (all hidden)
     const newRevealedTiles = Array(MAX_ROWS)
@@ -165,12 +161,12 @@ const DragonTower = () => {
     newRevealedTiles[rowIndex][colIndex] = true;
     setRevealedTiles(newRevealedTiles);
     
-    // Check if the tile is safe
+    // Check if the tile has a dragon
     if (tiles[rowIndex][colIndex] === 1) {
       // Hit a dragon - game over
       setIsGameOver(true);
       
-      // Reveal the safe path for the current row
+      // Reveal all tiles in the current row
       const finalRevealedTiles = [...newRevealedTiles];
       for (let col = 0; col < tiles[rowIndex].length; col++) {
         finalRevealedTiles[rowIndex][col] = true;
@@ -223,7 +219,7 @@ const DragonTower = () => {
     const winAmount = Math.floor(betAmount * cashOutMultiplier);
     updateCoins(winAmount);
     
-    // Reveal the safe path for current level
+    // Reveal the safe paths for previous levels
     const finalRevealedTiles = [...revealedTiles];
     for (let row = 0; row <= currentLevel - 1; row++) {
       for (let col = 0; col < tiles[row].length; col++) {
@@ -418,24 +414,24 @@ const DragonTower = () => {
               )}
             </div>
             
-            <div className="flex-1 bg-casino-card rounded-xl p-6">
-              <div className="flex flex-col-reverse gap-3">
+            <div className="flex-1 bg-casino-card rounded-xl p-6 relative">
+              <div className="flex flex-col-reverse gap-3 max-w-3xl mx-auto">
                 {Array(MAX_ROWS).fill(0).map((_, rowIndex) => {
                   const isCurrentLevel = rowIndex === currentLevel && !isGameOver;
                   const isFutureLevel = rowIndex > currentLevel;
+                  const isPastLevel = rowIndex < currentLevel;
                   const columnsCount = DIFFICULTY_PRESETS[difficulty].columns;
                   
                   return (
                     <div 
                       key={rowIndex} 
-                      className={`grid grid-cols-${columnsCount} gap-3`}
+                      className={`grid gap-3 relative ${isCurrentLevel ? 'z-10' : ''}`}
                       style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}
                     >
                       {Array(columnsCount).fill(0).map((_, colIndex) => {
                         const isRevealed = revealedTiles[rowIndex]?.[colIndex];
                         const isDragon = tiles[rowIndex]?.[colIndex] === 1;
                         const isClickable = isCurrentLevel && !isLoading;
-                        const isPastLevel = rowIndex < currentLevel;
                         
                         return (
                           <div
@@ -444,12 +440,13 @@ const DragonTower = () => {
                             className={`
                               aspect-square flex items-center justify-center rounded-lg transition-all duration-300
                               ${isClickable 
-                                ? `cursor-pointer ${DIFFICULTY_PRESETS[difficulty].color}/30 hover:${DIFFICULTY_PRESETS[difficulty].color}/50` 
+                                ? `cursor-pointer border-2 border-${DIFFICULTY_PRESETS[difficulty].color}/50 ${DIFFICULTY_PRESETS[difficulty].color}/30 hover:${DIFFICULTY_PRESETS[difficulty].color}/50` 
                                 : isFutureLevel ? 'bg-casino-background/50 cursor-not-allowed opacity-50' : 'bg-casino-background'}
                               ${isPastLevel && !isRevealed ? 'bg-green-800/30' : ''}
-                              ${isRevealed && isDragon ? 'bg-red-900/50' : ''}
-                              ${isRevealed && !isDragon ? 'bg-green-700/50' : ''}
+                              ${isRevealed && isDragon ? 'bg-red-900/50 border-red-600 border-2' : ''}
+                              ${isRevealed && !isDragon ? 'bg-green-700/50 border-green-500 border-2' : ''}
                               ${isLoading && isCurrentLevel ? 'animate-pulse' : ''}
+                              ${isCurrentLevel ? 'shadow-lg shadow-primary/20' : ''}
                             `}
                           >
                             {isLoading && rowIndex === currentLevel && !isRevealed ? (
@@ -462,13 +459,16 @@ const DragonTower = () => {
                               )
                             ) : rowIndex === MAX_ROWS - 1 && isCurrentLevel ? (
                               <Trophy className="text-yellow-400 opacity-50" size={24} />
+                            ) : isCurrentLevel ? (
+                              <span className="text-lg text-white font-bold opacity-70">?</span>
                             ) : isFutureLevel ? (
                               <span className="text-xs text-gray-500 opacity-50">{rowIndex + 1}</span>
                             ) : null}
                           </div>
                         );
                       })}
-                      <div className="absolute -right-16 top-1/2 transform -translate-y-1/2 hidden md:block">
+                      
+                      <div className="absolute -right-16 top-1/2 transform -translate-y-1/2 hidden md:flex items-center">
                         <span className={`px-2 py-1 rounded ${isCurrentLevel ? DIFFICULTY_PRESETS[difficulty].color : 'bg-casino-muted/30'} text-xs font-bold`}>
                           {multipliers[rowIndex]}x
                         </span>
@@ -477,6 +477,19 @@ const DragonTower = () => {
                   );
                 })}
               </div>
+              
+              {/* Progress indicator */}
+              {gameActive && !isGameOver && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-casino-muted/20">
+                  <div 
+                    className="bg-gradient-to-b from-green-500 to-yellow-500"
+                    style={{ 
+                      height: `${(currentLevel / MAX_ROWS) * 100}%`,
+                      transition: 'height 0.5s ease-out' 
+                    }}
+                  ></div>
+                </div>
+              )}
               
               {isGameOver && (
                 <div className={`mt-4 p-4 rounded-lg ${win ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
@@ -505,7 +518,7 @@ const DragonTower = () => {
           <h2 className="text-xl font-semibold mb-2 text-white">How to Play</h2>
           <div className="space-y-2 text-gray-300">
             <p>1. Choose your difficulty level and bet amount</p>
-            <p>2. Each row has multiple tiles - only one safe path and the rest are dragons</p>
+            <p>2. Each row has multiple tiles - only one is a dragon, the rest are safe</p>
             <p>3. Click on a tile to reveal it - if it's safe, you'll move up to the next row</p>
             <p>4. Each level has a different multiplier - the higher you climb, the bigger the reward!</p>
             <p>5. You can cash out at any time to secure your winnings</p>
