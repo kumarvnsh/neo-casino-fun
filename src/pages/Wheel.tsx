@@ -221,7 +221,7 @@ const Wheel = () => {
   const [result, setResult] = useState<number | null>(null);
   const [rotation, setRotation] = useState(0);
   const [segments, setSegments] = useState(createWheelSegments("medium", numSegments));
-  const [recentMultipliers, setRecentMultipliers] = useState<string[]>([]);
+  const [recentMultipliers, setRecentMultipliers] = useState<Array<{ label: string; color: string }>>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameActive, setGameActive] = useState(true);
   const spinCompletedRef = useRef(false);
@@ -388,8 +388,11 @@ const Wheel = () => {
         
         // Update recent multipliers only after wheel stops
         setRecentMultipliers(prev => {
-          const updated = [winningSegment.label, ...prev];
-          return updated.slice(0, 10); // Keep only last 10 multipliers
+          const updated = [{ 
+            label: winningSegment.label, 
+            color: winningSegment.color 
+          }, ...prev];
+          return updated.slice(0, 5); // Keep only last 5 multipliers
         });
         
         if (winAmount > 0) {
@@ -531,13 +534,17 @@ const Wheel = () => {
           
           <div className="flex-1 bg-casino-card rounded-xl p-6">
             {/* Recent multipliers display */}
-            <div className="flex justify-center gap-2 mb-4 overflow-x-auto">
+            <div className="flex justify-center gap-1.5 mb-4">
               {recentMultipliers.map((mult, index) => (
                 <div
                   key={index}
-                  className="px-3 py-1 rounded bg-casino-background text-white text-sm"
+                  className="px-2 py-1 rounded-md bg-[#1a1d1f] text-white text-sm text-center min-w-[45px] relative"
                 >
-                  {mult}
+                  <span>{mult.label}</span>
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 h-0.5"
+                    style={{ backgroundColor: mult.color }}
+                  />
                 </div>
               ))}
             </div>
