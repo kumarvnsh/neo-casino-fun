@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CoinProvider } from "@/contexts/CoinContext";
 import Index from "./pages/Index";
 import DragonTower from "./pages/DragonTower";
@@ -33,7 +33,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename={isProduction ? "/neo-casino-fun" : ""}>
+        <HashRouter basename={isProduction ? "/neo-casino-fun" : ""}>
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
@@ -45,7 +45,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </TooltipProvider>
     </CoinProvider>
   </QueryClientProvider>
