@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Neo Casino Fun</title>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      var pathSegmentsToKeep = 1;
+      var l = window.location;
+      var r = l.pathname.split('/').slice(1);
+      var s = r.slice(0, pathSegmentsToKeep).join('/') + '/';
+      var m = l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/');
+      var f = l.search;
+      var d = l.hash;
+      var c = l.href;
+      var x = l.origin + '/' + s + (m ? m + '/' : '') + '?p=' + (l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/') + f + d);
+      var h = l.href;
+      var y = h.indexOf('?p=');
+      if (y !== -1) {
+        c = h.slice(0, y);
+      }
+      var w = h;
+      if (l.protocol === 'file:') {
+        w = new URL(l.href).href;
+      }
+      var u = r.slice(0, pathSegmentsToKeep).join('/');
+      var g = document.createElement('script');
+      g.type = 'text/javascript';
+      g.async = true;
+      g.src = w.slice(0, w.lastIndexOf('/') + 1) + (u ? u + '/' : '') + (m ? m + '/' : '') + '_redirect.js';
+      document.head.appendChild(g);
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <h1>Redirecting...</h1>
+    </noscript>
+  </body>
+</html> 
