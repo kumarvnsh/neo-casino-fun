@@ -14,7 +14,6 @@ import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
-const isProduction = import.meta.env.MODE === 'production';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -33,7 +32,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <HashRouter basename={isProduction ? "/neo-casino-fun" : ""}>
+        <HashRouter>
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
@@ -42,7 +41,6 @@ const App = () => (
             <Route path="/dice" element={<Dice />} />
             <Route path="/wheel" element={<Wheel />} />
             <Route path="/hi-lo" element={<HiLo />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </HashRouter>

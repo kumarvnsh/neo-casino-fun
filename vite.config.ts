@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/',  // Using root base since we're using hash routing
+  base: mode === 'production' ? '/neo-casino-fun/' : '/',
   server: {
     host: true,  // This enables listening on all network interfaces
     port: 8080,
