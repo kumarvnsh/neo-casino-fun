@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
 import { Button } from '@/components/ui/button';
@@ -72,9 +72,13 @@ const HiLo = () => {
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
   const [potentialWin, setPotentialWin] = useState(0);
   const [cardHistory, setCardHistory] = useState<Card[]>([]);
+  const actionCompletedRef = useRef(false);
 
   // Start a new game
   const startGame = () => {
+    // Reset completion guard
+    actionCompletedRef.current = false;
+
     if (betAmount <= 0) {
       toast({
         title: "Invalid bet amount",
@@ -115,6 +119,9 @@ const HiLo = () => {
   const makeGuess = async (direction: 'higher' | 'lower') => {
     if (!currentCard || isRevealing) return;
 
+    // Reset completion guard
+    actionCompletedRef.current = false;
+
     setIsRevealing(true);
     const nextCardFromDeck = deck[0];
     setNextCard(nextCardFromDeck);
@@ -148,6 +155,10 @@ const HiLo = () => {
 
   // Handle a winning guess
   const handleWin = (newCard: Card) => {
+    // Guard against multiple completions
+    if (actionCompletedRef.current) return;
+    actionCompletedRef.current = true;
+
     const newStreak = streak + 1;
     const odds = getPayoutOdds(currentCard!.value, newCard.value > currentCard!.value ? 'higher' : 'lower');
     const newMultiplier = +(currentMultiplier * odds).toFixed(2);
@@ -170,6 +181,10 @@ const HiLo = () => {
 
   // Handle a losing guess
   const handleLoss = () => {
+    // Guard against multiple completions
+    if (actionCompletedRef.current) return;
+    actionCompletedRef.current = true;
+
     toast({
       title: "Game Over!",
       description: "Better luck next time!",
@@ -190,21 +205,30 @@ const HiLo = () => {
   const cashOut = () => {
     if (!isGameActive) return;
     
-    const winAmount = Math.floor(betAmount * currentMultiplier);
-    updateCoins(winAmount);
+    // Reset completion guard
+    actionCompletedRef.current = false;
     
-    toast({
-      title: "Cashed Out!",
-      description: `You won ${winAmount} coins! (${currentMultiplier}x)`,
-    });
-    
-    setIsGameActive(false);
-    setStreak(0);
-    setCurrentMultiplier(1);
-    setPotentialWin(0);
-    setCurrentCard(null);
-    setNextCard(null);
-    setCardHistory([]);
+    setTimeout(() => {
+      // Guard against multiple completions
+      if (actionCompletedRef.current) return;
+      actionCompletedRef.current = true;
+
+      const winAmount = Math.floor(betAmount * currentMultiplier);
+      updateCoins(winAmount);
+      
+      toast({
+        title: "Cashed Out!",
+        description: `You won ${winAmount} coins! (${currentMultiplier}x)`,
+      });
+      
+      setIsGameActive(false);
+      setStreak(0);
+      setCurrentMultiplier(1);
+      setPotentialWin(0);
+      setCurrentCard(null);
+      setNextCard(null);
+      setCardHistory([]);
+    }, 400);
   };
 
   // Calculate current odds

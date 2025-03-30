@@ -19,43 +19,50 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCoins } from '@/utils/coinManager';
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Game configuration
 const DIFFICULTY_PRESETS = {
-  easy: {
-    label: "Easy",
-    color: "green",
-    textColor: "text-green-400",
-    segments: [
-      { multiplier: 0, chance: 0.30, color: "#ef4444" },    // Red for 0x
-      { multiplier: 1.5, chance: 0.50, color: "#22c55e" },  // Green for 1.5x
-      { multiplier: 1.7, chance: 0.20, color: "#ffffff" }   // White for 1.7x
-    ]
+  easy: { 
+    name: "Easy", 
+    defaultSegments: 20,
+    multipliers: [
+      { value: 0, chance: 60, color: "#374151" },    // Gray
+      { value: 1.5, chance: 20, color: "#22c55e" },  // Green
+      { value: 1.7, chance: 10, color: "#ffffff" },  // White
+    ],
+    color: "bg-green-600",
+    textColor: "text-green-500",
+    description: "3 multipliers" 
   },
-  medium: {
-    label: "Medium",
-    color: "yellow",
-    textColor: "text-yellow-400",
-    segments: [
-      { multiplier: 0, chance: 0.45, color: "#ef4444" },    // Red for 0x
-      { multiplier: 1.5, chance: 0.20, color: "#22c55e" },  // Green for 1.5x
-      { multiplier: 1.7, chance: 0.15, color: "#ffffff" },  // White for 1.7x
-      { multiplier: 2.0, chance: 0.10, color: "#eab308" },  // Yellow for 2x
-      { multiplier: 3.0, chance: 0.10, color: "#3b82f6" }   // Blue for 3x
-    ]
+  medium: { 
+    name: "Medium", 
+    defaultSegments: 25,
+    multipliers: [
+      { value: 0, chance: 45, color: "#374151" },    // Gray
+      { value: 1.5, chance: 20, color: "#22c55e" },  // Green
+      { value: 1.7, chance: 15, color: "#ffffff" },  // White
+      { value: 2.0, chance: 10, color: "#eab308" },  // Yellow
+      { value: 3.0, chance: 10, color: "#3b82f6" },  // Blue
+    ],
+    color: "bg-yellow-600",
+    textColor: "text-yellow-500",
+    description: "5 multipliers" 
   },
-  hard: {
-    label: "Hard",
-    color: "red",
-    textColor: "text-red-400",
-    segments: [
-      { multiplier: 0, chance: 0.50, color: "#ef4444" },    // Red for 0x
-      { multiplier: 1.5, chance: 0.10, color: "#22c55e" },  // Green for 1.5x
-      { multiplier: 1.7, chance: 0.10, color: "#ffffff" },  // White for 1.7x
-      { multiplier: 2.0, chance: 0.10, color: "#eab308" },  // Yellow for 2x
-      { multiplier: 3.0, chance: 0.10, color: "#3b82f6" },  // Blue for 3x
-      { multiplier: 4.0, chance: 0.10, color: "#f97316" }   // Orange for 4x
-    ]
+  hard: { 
+    name: "Hard", 
+    defaultSegments: 30,
+    multipliers: [
+      { value: 0, chance: 50, color: "#374151" },    // Gray
+      { value: 1.5, chance: 10, color: "#22c55e" },  // Green
+      { value: 1.7, chance: 10, color: "#ffffff" },  // White
+      { value: 2.0, chance: 10, color: "#eab308" },  // Yellow
+      { value: 3.0, chance: 10, color: "#3b82f6" },  // Blue
+      { value: 4.0, chance: 10, color: "#f97316" },  // Orange
+    ],
+    color: "bg-red-600",
+    textColor: "text-red-500",
+    description: "6 multipliers" 
   }
 };
 
@@ -72,45 +79,131 @@ const SEGMENT_COLORS = {
   '4.0': '#f97316'   // Orange for 4.0x
 } as const;
 
+// Define types
+interface WheelSegment {
+  multiplier: number;
+  color: string;
+  label: string;
+}
+
 // Define the type for difficulty keys
 type DifficultyKey = keyof typeof DIFFICULTY_PRESETS;
 
 type MultiplierKey = keyof typeof SEGMENT_COLORS;
 
 // Helper function to create wheel segments
-const createWheelSegments = (numSegments: number, difficulty: DifficultyKey) => {
-  const segments = [];
-  const multipliers = DIFFICULTY_PRESETS[difficulty].segments;
+const createWheelSegments = (difficulty: DifficultyKey, numSegments: number) => {
+  const difficultySettings = DIFFICULTY_PRESETS[difficulty];
+  const segments: WheelSegment[] = [];
   
-  // Calculate how many segments each multiplier should have based on its chance
-  const segmentCounts = multipliers.map(m => ({
-    multiplier: m.multiplier,
-    color: m.color,
-    count: Math.round(m.chance * numSegments)
-  }));
-  
-  // Adjust total count to match numSegments
-  const totalCount = segmentCounts.reduce((sum, s) => sum + s.count, 0);
-  if (totalCount !== numSegments) {
-    const diff = numSegments - totalCount;
-    // Add or remove from the highest chance multiplier
-    const highestChanceIndex = multipliers.reduce((maxIndex, m, i) => 
-      m.chance > multipliers[maxIndex].chance ? i : maxIndex
-    , 0);
-    segmentCounts[highestChanceIndex].count += diff;
-  }
-  
-  // Create segments array
-  for (const segment of segmentCounts) {
-    for (let i = 0; i < segment.count; i++) {
+  // For Hard mode, create segments with the special formula
+  if (difficulty === 'hard') {
+    const winningMultiplier = (numSegments - 1) * 1.05;
+    
+    // Create one winning segment with 2 decimal places
+    segments.push({
+      multiplier: winningMultiplier,
+      color: "#a855f7", // Purple
+      label: `${winningMultiplier.toFixed(2)}x`
+    });
+    
+    // Create losing segments
+    for (let i = 1; i < numSegments; i++) {
       segments.push({
-        multiplier: segment.multiplier,
-        color: segment.color
+        multiplier: 0,
+        color: "#374151", // Gray
+        label: "0x"
       });
     }
+  } else if (difficulty === 'medium' && (numSegments === 35 || numSegments === 40)) {
+    // Special case for medium mode with 35 or 40 segments
+    const totalChance = 100; // Total percentage
+    const multiplierChances = [
+      { value: 0, chance: 45, color: "#374151" },    // Gray
+      { value: 1.5, chance: 20, color: "#22c55e" },  // Green
+      { value: 1.7, chance: 15, color: "#ffffff" },  // White
+      { value: 2.0, chance: 10, color: "#eab308" },  // Yellow
+      { value: 3.0, chance: 10, color: "#3b82f6" },  // Blue
+    ];
+    
+    // Create segments based on chances
+    multiplierChances.forEach(({ value, chance, color }) => {
+      const count = Math.round((chance / totalChance) * numSegments);
+      for (let i = 0; i < count; i++) {
+        segments.push({
+          multiplier: value,
+          color: color,
+          label: `${value}x`
+        });
+      }
+    });
+
+    // Adjust total count to match requested segments
+    const totalCount = segments.length;
+    if (totalCount !== numSegments) {
+      const diff = numSegments - totalCount;
+      // Add or remove 0x segments to match the total
+      if (diff > 0) {
+        for (let i = 0; i < diff; i++) {
+          segments.push({
+            multiplier: 0,
+            color: "#374151",
+            label: "0x"
+          });
+        }
+      } else if (diff < 0) {
+        // Remove excess 0x segments
+        let removed = 0;
+        segments.slice().reverse().forEach((segment, i) => {
+          if (removed >= Math.abs(diff)) return;
+          if (segment.multiplier === 0) {
+            segments.splice(segments.length - 1 - i, 1);
+            removed++;
+          }
+        });
+      }
+    }
+
+    // Replace one 0x segment with 4.0x
+    const zeroIndex = segments.findIndex(s => s.multiplier === 0);
+    if (zeroIndex !== -1) {
+      segments[zeroIndex] = {
+        multiplier: 4.0,
+        color: "#f97316", // Orange
+        label: "4.0x"
+      };
+    }
+  } else {
+    // Standard probability-based distribution
+    const totalChance = difficultySettings.multipliers.reduce((sum, m) => sum + m.chance, 0);
+    const segmentCounts = difficultySettings.multipliers.map(m => ({
+      multiplier: m,
+      count: Math.round((m.chance / totalChance) * numSegments)
+    }));
+    
+    // Adjust total count to match requested segments
+    const totalCount = segmentCounts.reduce((sum, s) => sum + s.count, 0);
+    if (totalCount !== numSegments) {
+      const diff = numSegments - totalCount;
+      const mostCommonIndex = segmentCounts.findIndex(s => s.multiplier.value === 0);
+      if (mostCommonIndex !== -1) {
+        segmentCounts[mostCommonIndex].count += diff;
+      }
+    }
+    
+    // Create segments
+    segmentCounts.forEach(({ multiplier, count }) => {
+      for (let i = 0; i < count; i++) {
+        segments.push({
+          multiplier: multiplier.value,
+          color: multiplier.color,
+          label: `${multiplier.value}x`
+        });
+      }
+    });
   }
   
-  // Shuffle the segments
+  // Shuffle segments
   for (let i = segments.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [segments[i], segments[j]] = [segments[j], segments[i]];
@@ -124,17 +217,50 @@ const Wheel = () => {
   const [betAmount, setBetAmount] = useState(100);
   const [difficulty, setDifficulty] = useState<DifficultyKey>("medium");
   const [isSpinning, setIsSpinning] = useState(false);
-  const [numSegments, setNumSegments] = useState(30);
+  const [numSegments, setNumSegments] = useState(DIFFICULTY_PRESETS.medium.defaultSegments);
   const [result, setResult] = useState<number | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [segments, setSegments] = useState(createWheelSegments(30, "medium"));
+  const [segments, setSegments] = useState(createWheelSegments("medium", numSegments));
+  const [recentMultipliers, setRecentMultipliers] = useState<string[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameActive, setGameActive] = useState(true);
+  const spinCompletedRef = useRef(false);
 
   // Update segments when difficulty or number of segments changes
   useEffect(() => {
-    setSegments(createWheelSegments(numSegments, difficulty));
+    setSegments(createWheelSegments(difficulty, numSegments));
   }, [difficulty, numSegments]);
+
+  // Helper function to calculate probability text
+  const getProbabilityText = (segment: WheelSegment) => {
+    const total = segments.length;
+    const count = segments.filter(s => s.multiplier === segment.multiplier).length;
+    return `${count}/${total} chances`;
+  };
+
+  // Helper function to render legend item
+  const renderLegendItem = (segment: WheelSegment) => (
+    <div 
+      key={segment.multiplier}
+      className="relative group"
+    >
+      <div className="px-6 py-2 rounded-md bg-[#1a1d1f] border border-[#2a2e32] text-white text-center min-w-[100px]">
+        <span>{segment.label}</span>
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-1 rounded-b-md"
+          style={{ backgroundColor: segment.color }}
+        />
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+          {getProbabilityText(segment)}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Update numSegments when difficulty changes
+  useEffect(() => {
+    setNumSegments(DIFFICULTY_PRESETS[difficulty].defaultSegments);
+  }, [difficulty]);
 
   // Draw the wheel
   useEffect(() => {
@@ -154,8 +280,6 @@ const Wheel = () => {
     // Draw outer ring with color segments
     const segmentAngle = (2 * Math.PI) / segments.length;
     segments.forEach((segment, index) => {
-      // Adjust the angles to match the pointer at top
-      // Add half segment angle to align segments with pointer
       const startAngle = index * segmentAngle + (rotation * Math.PI / 180) - Math.PI / 2 + segmentAngle / 2;
       const endAngle = (index + 1) * segmentAngle + (rotation * Math.PI / 180) - Math.PI / 2 + segmentAngle / 2;
 
@@ -166,7 +290,7 @@ const Wheel = () => {
       ctx.closePath();
       ctx.fillStyle = segment.color;
       ctx.fill();
-      ctx.strokeStyle = '#2a2e32';
+      ctx.strokeStyle = 'rgba(42, 46, 50, 0.1)'; // Very low opacity for segment dividers
       ctx.lineWidth = 1;
       ctx.stroke();
 
@@ -177,29 +301,16 @@ const Wheel = () => {
       ctx.closePath();
       ctx.fillStyle = '#1e2124';
       ctx.fill();
-      ctx.strokeStyle = '#2a2e32';
+      ctx.strokeStyle = 'rgba(42, 46, 50, 0.1)'; // Very low opacity for segment dividers
       ctx.lineWidth = 1;
       ctx.stroke();
-
-      // Add multiplier labels
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(startAngle + segmentAngle / 2);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px Arial';
-      ctx.fillText(`${segment.multiplier}x`, radius - 25, 5);
-      ctx.restore();
     });
 
-    // Draw center circle
+    // Draw center circle (solid color, no lines)
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius * 0.15, 0, 2 * Math.PI);
     ctx.fillStyle = '#1e2124';
     ctx.fill();
-    ctx.strokeStyle = '#2a2e32';
-    ctx.lineWidth = 3;
-    ctx.stroke();
 
     // Draw pointer
     const pointerHeight = 30;
@@ -240,6 +351,9 @@ const Wheel = () => {
       return;
     }
 
+    // Reset completion guard
+    spinCompletedRef.current = false;
+
     // Deduct bet amount
     updateCoins(-betAmount);
     
@@ -263,15 +377,26 @@ const Wheel = () => {
     const animate = () => {
       const remaining = finalRotation - currentRotation;
       if (remaining <= 0) {
+        // Guard against multiple completions
+        if (spinCompletedRef.current) return;
+        spinCompletedRef.current = true;
+        
         setIsSpinning(false);
         
         // Calculate winnings using the stored winning segment
         const winAmount = Math.floor(betAmount * winningSegment.multiplier);
+        
+        // Update recent multipliers only after wheel stops
+        setRecentMultipliers(prev => {
+          const updated = [winningSegment.label, ...prev];
+          return updated.slice(0, 10); // Keep only last 10 multipliers
+        });
+        
         if (winAmount > 0) {
           updateCoins(winAmount);
           toast({
             title: "You Win!",
-            description: `You won ${formatCoins(winAmount)} coins! (${winningSegment.multiplier}x)`,
+            description: `You won ${formatCoins(winAmount)} coins! (${winningSegment.label})`,
           });
         } else {
           toast({
@@ -353,7 +478,7 @@ const Wheel = () => {
                       className="focus:bg-casino-primary/50 focus:text-white"
                     >
                       <div className="flex items-center gap-2">
-                        <span>{diffSettings.label}</span>
+                        <span>{diffSettings.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -405,6 +530,18 @@ const Wheel = () => {
           </div>
           
           <div className="flex-1 bg-casino-card rounded-xl p-6">
+            {/* Recent multipliers display */}
+            <div className="flex justify-center gap-2 mb-4 overflow-x-auto">
+              {recentMultipliers.map((mult, index) => (
+                <div
+                  key={index}
+                  className="px-3 py-1 rounded bg-casino-background text-white text-sm"
+                >
+                  {mult}
+                </div>
+              ))}
+            </div>
+
             <div className="max-w-md mx-auto">
               <canvas 
                 ref={canvasRef} 
@@ -413,13 +550,40 @@ const Wheel = () => {
                 className="w-full h-full"
               />
             </div>
+
+            {/* Color legend */}
+            <div className="flex flex-wrap justify-center gap-4 mt-4">
+              {difficulty === 'hard' ? (
+                <>
+                  {renderLegendItem({
+                    multiplier: 0,
+                    color: "#374151",
+                    label: "0.00x"
+                  })}
+                  {renderLegendItem({
+                    multiplier: (numSegments - 1) * 1.05,
+                    color: "#a855f7",
+                    label: `${((numSegments - 1) * 1.05).toFixed(2)}x`
+                  })}
+                </>
+              ) : (
+                segments
+                  .reduce((unique: WheelSegment[], segment) => 
+                    unique.some(s => s.multiplier === segment.multiplier) 
+                      ? unique 
+                      : [...unique, segment]
+                  , [])
+                  .sort((a, b) => a.multiplier - b.multiplier)
+                  .map((segment) => renderLegendItem(segment))
+              )}
+            </div>
           </div>
         </div>
         
         <div className="grid grid-cols-2 gap-2 text-center">
           <div className="bg-casino-background p-2 rounded-lg">
             <p className="text-xs text-gray-400">Multiplier</p>
-            <p className="text-lg font-bold text-blue-400">{segments[result as number]?.multiplier}x</p>
+            <p className="text-lg font-bold text-blue-400">{segments[result as number]?.label}</p>
           </div>
           <div className="bg-casino-background p-2 rounded-lg">
             <p className="text-xs text-gray-400">Potential Win</p>
@@ -461,18 +625,12 @@ const Wheel = () => {
               <div className="space-y-2">
                 <h3 className="text-lg font-medium text-white">Difficulty Levels</h3>
                 <ul className="text-sm text-gray-300 space-y-2">
-                  <li className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-green-600"></span>
-                    <span>Easy: 0x (30%), 1.5x (50%), 1.7x (20%)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-yellow-600"></span>
-                    <span>Medium: 0x (45%), 1.5x (20%), 1.7x (15%), 2x (10%), 3x (10%)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-red-600"></span>
-                    <span>Hard: 0x (50%), 1.5x-4x (10% each)</span>
-                  </li>
+                  {Object.entries(DIFFICULTY_PRESETS).map(([key, diffSettings]) => (
+                    <li key={key} className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${diffSettings.color}`}></span>
+                      <span>{diffSettings.name}: {diffSettings.description}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>

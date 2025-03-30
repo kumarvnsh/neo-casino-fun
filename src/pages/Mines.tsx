@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ const Mines = () => {
   const [autoRevealed, setAutoRevealed] = useState(0);
   const [autoTarget, setAutoTarget] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
+  const actionCompletedRef = useRef(false);
   
   // Calculate the next tile multiplier based on current state
   useEffect(() => {
@@ -89,6 +90,9 @@ const Mines = () => {
       return;
     }
     
+    // Reset completion guard
+    actionCompletedRef.current = false;
+    
     // Deduct bet amount
     updateCoins(-betAmount);
     
@@ -127,46 +131,81 @@ const Mines = () => {
     
     setIsLoading(true);
     
-    // Create a copy of the revealed state
+    // Reset completion guard
+    actionCompletedRef.current = false;
+    
+    // Update revealed tiles
     const newRevealed = [...revealed];
     newRevealed[index] = true;
     setRevealed(newRevealed);
     
-    // Check if the tile is a mine
+    // Check if hit mine
     if (grid[index] === 1) {
-      // Hit a mine - game over
-      setIsGameOver(true);
-      
-      // Reveal all mines
-      const finalRevealed = grid.map((tile, i) => {
-        return tile === 1 || revealed[i];
-      });
-      
       setTimeout(() => {
+        // Guard against multiple completions
+        if (actionCompletedRef.current) return;
+        actionCompletedRef.current = true;
+
+        setIsGameOver(true);
+        setWin(false);
+        setIsAutoMode(false);
+        
+        // Reveal all mines
+        const finalRevealed = grid.map((tile, i) => {
+          return tile === 1 || revealed[i];
+        });
         setRevealed(finalRevealed);
+        
         toast({
           title: "Game Over!",
-          description: "You hit a mine! Better luck next time.",
+          description: "You hit a mine!",
           variant: "destructive",
         });
-        setIsLoading(false);
-      }, 300);
-    } else {
-      // Safe tile - update multiplier
-      setCurrentMultiplier(nextMultiplier);
-      
-      // If in auto mode, increment counter
-      if (isAutoMode) {
-        const newAutoRevealed = autoRevealed + 1;
-        setAutoRevealed(newAutoRevealed);
         
-        // Check if we've reached our auto target
-        if (newAutoRevealed >= autoTarget) {
-          cashOut();
+        setIsLoading(false);
+      }, 400);
+    } else {
+      setTimeout(() => {
+        // Guard against multiple completions
+        if (actionCompletedRef.current) return;
+        actionCompletedRef.current = true;
+
+        // Update multiplier
+        setCurrentMultiplier(nextMultiplier);
+        
+        // Check if all safe tiles are revealed
+        const safeTiles = GRID_SIZE - mineCount;
+        const revealedSafeTiles = newRevealed.filter((r, i) => r && grid[i] === 0).length;
+        
+        if (revealedSafeTiles === safeTiles) {
+          // Player has revealed all safe tiles - they win!
+          const finalWin = Math.floor(betAmount * nextMultiplier);
+          updateCoins(finalWin);
+          setIsGameOver(true);
+          setWin(true);
+          setIsAutoMode(false);
+          
+          toast({
+            title: "Congratulations!",
+            description: `You found all gems and won ${formatCoins(finalWin)} coins!`,
+          });
+        } else {
+          // Calculate next multiplier
+          const remainingSafeTiles = safeTiles - revealedSafeTiles;
+          const odds = remainingSafeTiles / (GRID_SIZE - revealedSafeTiles);
+          const nextMult = Number((nextMultiplier * (1 / odds)).toFixed(2));
+          setNextMultiplier(nextMult);
+          
+          if (isAutoMode) {
+            setAutoRevealed(prev => prev + 1);
+            if (autoRevealed + 1 >= autoTarget) {
+              cashOut();
+            }
+          }
         }
-      }
-      
-      setIsLoading(false);
+        
+        setIsLoading(false);
+      }, 400);
     }
   };
   
@@ -186,25 +225,34 @@ const Mines = () => {
     
     setIsLoading(true);
     
-    const winAmount = Math.floor(betAmount * currentMultiplier);
-    updateCoins(winAmount);
+    // Reset completion guard
+    actionCompletedRef.current = false;
     
-    // Reveal all mines
-    const finalRevealed = grid.map((tile, i) => {
-      return tile === 1 || revealed[i];
-    });
-    
-    setRevealed(finalRevealed);
-    setIsGameOver(true);
-    setWin(true);
-    setIsAutoMode(false);
-    
-    toast({
-      title: "Cashed Out!",
-      description: `You cashed out and won ${formatCoins(winAmount)} coins!`,
-    });
-    
-    setIsLoading(false);
+    setTimeout(() => {
+      // Guard against multiple completions
+      if (actionCompletedRef.current) return;
+      actionCompletedRef.current = true;
+
+      const winAmount = Math.floor(betAmount * currentMultiplier);
+      updateCoins(winAmount);
+      
+      // Reveal all mines
+      const finalRevealed = grid.map((tile, i) => {
+        return tile === 1 || revealed[i];
+      });
+      
+      setRevealed(finalRevealed);
+      setIsGameOver(true);
+      setWin(true);
+      setIsAutoMode(false);
+      
+      toast({
+        title: "Cashed Out!",
+        description: `You cashed out and won ${formatCoins(winAmount)} coins!`,
+      });
+      
+      setIsLoading(false);
+    }, 400);
   };
   
   const resetGame = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ const DiceGame = () => {
   const [isRolling, setIsRolling] = useState(false);
   const [result, setResult] = useState<number | null>(null);
   const [win, setWin] = useState(false);
+  const rollCompletedRef = useRef(false);
   
   // Calculate win chance and multiplier based on current settings
   const winChance = isRollOver 
@@ -66,6 +67,9 @@ const DiceGame = () => {
       return;
     }
     
+    // Reset completion guard
+    rollCompletedRef.current = false;
+    
     // Deduct bet amount
     updateCoins(-betAmount);
     
@@ -77,6 +81,10 @@ const DiceGame = () => {
     
     // Simulate the roll with a delay for animation
     setTimeout(() => {
+      // Guard against multiple completions
+      if (rollCompletedRef.current) return;
+      rollCompletedRef.current = true;
+
       // Generate a random number between 0 and 100
       const rollResult = parseFloat((Math.random() * 100).toFixed(2));
       setResult(rollResult);

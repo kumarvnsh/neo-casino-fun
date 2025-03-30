@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCoins } from '@/contexts/CoinContext';
 import { Button } from '@/components/ui/button';
@@ -74,6 +74,7 @@ const DragonTower = () => {
   const [isGameOver, setIsGameOver] = useState(false);
   const [win, setWin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const actionCompletedRef = useRef(false);
   
   // Reset game state when component unmounts or page reloads
   useEffect(() => {
@@ -187,33 +188,43 @@ const DragonTower = () => {
   
   // Handle tile click
   const handleTileClick = (rowIndex: number, colIndex: number) => {
-    if (!gameActive || rowIndex !== currentLevel || isGameOver || isLoading) return;
+    if (!gameActive || isGameOver || isLoading || revealedTiles[rowIndex][colIndex]) return;
     
     setIsLoading(true);
     
-    // Create a copy of the revealed state
+    // Reset completion guard
+    actionCompletedRef.current = false;
+
+    // Update revealed tiles
     const newRevealedTiles = [...revealedTiles];
     newRevealedTiles[rowIndex][colIndex] = true;
     setRevealedTiles(newRevealedTiles);
     
-    // Check if the tile has a dragon
+    // Check if hit dragon
     if (tiles[rowIndex][colIndex] === 1) {
-      // Hit a dragon - game over
-      setIsGameOver(true);
-      
-      // Reveal all tiles in the current row
-      const finalRevealedTiles = [...newRevealedTiles];
-      for (let col = 0; col < tiles[rowIndex].length; col++) {
-        finalRevealedTiles[rowIndex][col] = true;
-      }
-      
       setTimeout(() => {
-        setRevealedTiles(finalRevealedTiles);
+        // Guard against multiple completions
+        if (actionCompletedRef.current) return;
+        actionCompletedRef.current = true;
+
+        setIsGameOver(true);
+        setWin(false);
+        
         toast({
           title: "Game Over!",
-          description: "You hit a dragon! Better luck next time.",
+          description: "You hit a dragon!",
           variant: "destructive",
         });
+        
+        // Reveal all tiles
+        const finalRevealedTiles = [...revealedTiles];
+        for (let row = 0; row < MAX_ROWS; row++) {
+          for (let col = 0; col < tiles[row].length; col++) {
+            finalRevealedTiles[row][col] = true;
+          }
+        }
+        setRevealedTiles(finalRevealedTiles);
+        
         setIsLoading(false);
       }, 400);
     } else {
@@ -221,6 +232,10 @@ const DragonTower = () => {
       const newLevel = currentLevel + 1;
       
       setTimeout(() => {
+        // Guard against multiple completions
+        if (actionCompletedRef.current) return;
+        actionCompletedRef.current = true;
+
         setCurrentLevel(newLevel);
         setIsLoading(false);
         
@@ -230,6 +245,16 @@ const DragonTower = () => {
           updateCoins(winAmount);
           setIsGameOver(true);
           setWin(true);
+          
+          // Reveal all tiles when winning
+          const finalRevealedTiles = [...revealedTiles];
+          for (let row = 0; row < MAX_ROWS; row++) {
+            for (let col = 0; col < tiles[row].length; col++) {
+              finalRevealedTiles[row][col] = true;
+            }
+          }
+          setRevealedTiles(finalRevealedTiles);
+          
           toast({
             title: "Congratulations!",
             description: `You reached the top and won ${formatCoins(winAmount)} coins!`,
@@ -250,23 +275,31 @@ const DragonTower = () => {
     
     setIsLoading(true);
     
+    // Reset completion guard
+    actionCompletedRef.current = false;
+    
     const cashOutMultiplier = multipliers[currentLevel - 1];
     const winAmount = Math.floor(betAmount * cashOutMultiplier);
-    updateCoins(winAmount);
-    
-    // Reveal the safe paths for previous levels
-    const finalRevealedTiles = [...revealedTiles];
-    for (let row = 0; row <= currentLevel - 1; row++) {
-      for (let col = 0; col < tiles[row].length; col++) {
-        finalRevealedTiles[row][col] = true;
-      }
-    }
-    
-    setRevealedTiles(finalRevealedTiles);
-    setIsGameOver(true);
-    setWin(true);
     
     setTimeout(() => {
+      // Guard against multiple completions
+      if (actionCompletedRef.current) return;
+      actionCompletedRef.current = true;
+
+      updateCoins(winAmount);
+      
+      // Reveal all tiles in all rows
+      const finalRevealedTiles = [...revealedTiles];
+      for (let row = 0; row < MAX_ROWS; row++) {
+        for (let col = 0; col < tiles[row].length; col++) {
+          finalRevealedTiles[row][col] = true;
+        }
+      }
+      
+      setRevealedTiles(finalRevealedTiles);
+      setIsGameOver(true);
+      setWin(true);
+      
       toast({
         title: "Cashed Out!",
         description: `You cashed out and won ${formatCoins(winAmount)} coins!`,
