@@ -1,0 +1,5 @@
+[33m364df41[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Add Hi-Lo game with responsive design and improved card display
+[33m4de2868[m Update game UI: Improve Dice game scroll bar, remove result bubble, and update How to Play sections
+[33m5a2c3ce[m Update deployment configuration and add gh-pages scripts
+[33m6090043[m Update configuration for kumarvnsh/neo-casino-fun repository
+[33mf199ba9[m Fix GitHub Pages deployment configuration

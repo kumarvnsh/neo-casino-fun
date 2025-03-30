@@ -75,6 +75,30 @@ const DragonTower = () => {
   const [win, setWin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Reset game state when component unmounts or page reloads
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Reset game state before page reload
+      setGameActive(false);
+      setCurrentLevel(0);
+      setIsGameOver(false);
+      setWin(false);
+      setIsLoading(false);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Reset game state when component unmounts
+      setGameActive(false);
+      setCurrentLevel(0);
+      setIsGameOver(false);
+      setWin(false);
+      setIsLoading(false);
+    };
+  }, []);
+  
   // Calculate multipliers based on difficulty
   useEffect(() => {
     const difficultySettings = DIFFICULTY_PRESETS[difficulty];
@@ -92,63 +116,73 @@ const DragonTower = () => {
   
   // Generate a new game
   const startGame = () => {
-    setIsLoading(true);
-    
-    if (betAmount <= 0) {
-      toast({
-        title: "Invalid bet amount",
-        description: "Please enter a bet amount greater than 0",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-    
-    if (betAmount > coins) {
-      toast({
-        title: "Insufficient funds",
-        description: "You don't have enough coins for this bet",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-    
-    // Deduct bet amount
-    updateCoins(-betAmount);
-    
-    const difficultySettings = DIFFICULTY_PRESETS[difficulty];
-    const columns = difficultySettings.columns;
-    
-    // Generate dragon position for each row (only one dragon per row)
-    const dragonPositions = Array(MAX_ROWS)
-      .fill(0)
-      .map(() => Math.floor(Math.random() * columns));
-    
-    // Initialize tiles with dragons (0 = safe, 1 = dragon)
-    const newTiles = Array(MAX_ROWS)
-      .fill(0)
-      .map((_, rowIndex) => {
-        return Array(columns).fill(0).map((_, colIndex) => {
-          return colIndex === dragonPositions[rowIndex] ? 1 : 0;
-        });
-      });
-    
-    // Initialize revealed state for all tiles (all hidden)
-    const newRevealedTiles = Array(MAX_ROWS)
-      .fill(0)
-      .map(() => Array(columns).fill(false));
-    
-    setTiles(newTiles);
-    setRevealedTiles(newRevealedTiles);
+    // Reset any existing game state first
+    setGameActive(false);
     setCurrentLevel(0);
-    setGameActive(true);
     setIsGameOver(false);
     setWin(false);
-    
+    setIsLoading(false);
+
+    // Small delay to ensure state is reset
     setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+      setIsLoading(true);
+      
+      if (betAmount <= 0) {
+        toast({
+          title: "Invalid bet amount",
+          description: "Please enter a bet amount greater than 0",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      if (betAmount > coins) {
+        toast({
+          title: "Insufficient funds",
+          description: "You don't have enough coins for this bet",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Deduct bet amount
+      updateCoins(-betAmount);
+      
+      const difficultySettings = DIFFICULTY_PRESETS[difficulty];
+      const columns = difficultySettings.columns;
+      
+      // Generate dragon position for each row (only one dragon per row)
+      const dragonPositions = Array(MAX_ROWS)
+        .fill(0)
+        .map(() => Math.floor(Math.random() * columns));
+      
+      // Initialize tiles with dragons (0 = safe, 1 = dragon)
+      const newTiles = Array(MAX_ROWS)
+        .fill(0)
+        .map((_, rowIndex) => {
+          return Array(columns).fill(0).map((_, colIndex) => {
+            return colIndex === dragonPositions[rowIndex] ? 1 : 0;
+          });
+        });
+      
+      // Initialize revealed state for all tiles (all hidden)
+      const newRevealedTiles = Array(MAX_ROWS)
+        .fill(0)
+        .map(() => Array(columns).fill(false));
+      
+      setTiles(newTiles);
+      setRevealedTiles(newRevealedTiles);
+      setCurrentLevel(0);
+      setGameActive(true);
+      setIsGameOver(false);
+      setWin(false);
+      
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 200);
+    }, 100);
   };
   
   // Handle tile click
@@ -181,7 +215,7 @@ const DragonTower = () => {
           variant: "destructive",
         });
         setIsLoading(false);
-      }, 800);
+      }, 400);
     } else {
       // Safe tile - move to next level
       const newLevel = currentLevel + 1;
@@ -206,7 +240,7 @@ const DragonTower = () => {
             description: `You found the safe path. Current multiplier: ${multipliers[currentLevel]}x`,
           });
         }
-      }, 800);
+      }, 400);
     }
   };
   
@@ -238,7 +272,7 @@ const DragonTower = () => {
         description: `You cashed out and won ${formatCoins(winAmount)} coins!`,
       });
       setIsLoading(false);
-    }, 800);
+    }, 400);
   };
   
   const resetGame = () => {
@@ -469,26 +503,6 @@ const DragonTower = () => {
                     transition: 'height 0.5s ease-out' 
                   }}
                 ></div>
-              </div>
-            )}
-            
-            {isGameOver && (
-              <div className={`mt-4 p-4 rounded-lg ${win ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
-                <div className="flex items-center gap-2">
-                  {win ? (
-                    <Trophy className="text-yellow-400" size={20} />
-                  ) : (
-                    <AlertTriangle className="text-red-400" size={20} />
-                  )}
-                  <h3 className="font-semibold text-white">
-                    {win ? 'You Win!' : 'Game Over!'}
-                  </h3>
-                </div>
-                <p className="text-gray-300 mt-1">
-                  {win 
-                    ? `You reached level ${currentLevel} and won ${formatCoins(currentWin)} coins!` 
-                    : 'You hit a dragon! Better luck next time.'}
-                </p>
               </div>
             )}
           </div>
